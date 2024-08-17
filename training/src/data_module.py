@@ -38,10 +38,41 @@ class Lc0Dataset(IterableDataset):
 
 # Testing code
 if __name__ == "__main__":
+    import numpy as np
+    from src.lc0.policy_index import policy_index
+
     FILE_PATH = "/Users/maxence/leela-data/training-run1-test80-20240817-1917/training.1387237598.gz"
 
-    dm = Lc0DataModule(file_path=FILE_PATH, batch_size=2)
+    dm = Lc0DataModule(file_path=FILE_PATH, batch_size=1)
     dm.setup("fit")
     dl = dm.train_dataloader()
     batch = next(iter(dl))
-    print(batch)
+    (planes, probs, winner, best_q, plies_left) = batch
+
+    planes = np.frombuffer(planes, dtype=np.float32)
+    probs = np.frombuffer(probs, dtype=np.float32)
+    winner = np.frombuffer(winner, dtype=np.float32)
+    best_q = np.frombuffer(best_q, dtype=np.float32)
+    plies_left = np.frombuffer(plies_left, dtype=np.float32)
+
+    planes = planes.reshape(-1, 112, 8, 8)
+    probs = probs.reshape(-1, 1858)
+    winner = winner.reshape(-1, 3)
+    best_q = best_q.reshape(-1, 3)
+    plies_left = plies_left.reshape(-1, 1)
+
+    policy = zip(policy_index, list(probs[0]))
+    policy = [(move, prob) for move, prob in policy if prob != -1]
+    policy = sorted(policy, key=lambda x: x[1], reverse=True)
+
+    print(planes)
+    print()
+
+    print("Policy:")
+    for move, prob in policy:
+        print(f"{move}: {prob}")
+    print()
+
+    print(f"Result (WDL): {winner[0]}")
+    print(f"Best Q (WDL): {best_q[0]}")
+    print(f"Plies left: {plies_left[0]}")
