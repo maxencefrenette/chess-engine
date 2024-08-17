@@ -1,2 +1,4 @@
 engine/.zig-cache/
 engine/zig-out/
+
+__pycache__/
