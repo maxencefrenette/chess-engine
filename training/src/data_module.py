@@ -1,6 +1,4 @@
-import os
 from glob import glob
-from torch.utils.data import IterableDataset
 import lightning as L
 from src.lc0.chunkparser import ChunkParser
 
