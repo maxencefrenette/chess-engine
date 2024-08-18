@@ -1,3 +1,5 @@
+training/src/lightning_logs/
+
 engine/.zig-cache/
 engine/zig-out/
 

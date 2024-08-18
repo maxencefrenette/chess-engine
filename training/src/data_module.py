@@ -5,8 +5,9 @@ import lightning as L
 from src.lc0.chunkparser import ChunkParser
 
 
-class Lc0DataModule(L.LightningDataModule):
+class Lc0Data(L.LightningDataModule):
     def __init__(self, file_path: str, batch_size: int):
+        super().__init__()
         self.file_path = file_path
         self.batch_size = batch_size
 
@@ -57,7 +58,7 @@ if __name__ == "__main__":
     FILE_PATH = "/Users/maxence/leela-data/*/training.*.gz"
     NUM_POSITIONS = 8
 
-    dm = Lc0DataModule(file_path=FILE_PATH, batch_size=NUM_POSITIONS)
+    dm = Lc0Data(file_path=FILE_PATH, batch_size=NUM_POSITIONS)
     dm.setup("fit")
     dl = dm.train_dataloader()
     batch = next(iter(dl))
