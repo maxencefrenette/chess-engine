@@ -23,15 +23,25 @@ class Model(L.LightningModule):
         )
 
     def training_step(self, batch, batch_idx):
-        board, castling_rights, _probs, _winner, best_q, plies_left = batch
+        (board, castling_rights, _probs, winner, best_q, plies_left) = batch
 
         board = board.reshape(-1, 12 * 8 * 8)
         x = torch.cat([board, castling_rights], dim=1)
 
-        y_hat = self.model(x)
         # For now it's safe to train on best_q since this is leela data and not self-play data
-        loss = nn.functional.cross_entropy(y_hat, best_q)
+        y = best_q
+
+        y_hat = self.model(x)
+        loss = nn.functional.cross_entropy(y_hat, y)
         self.log("train_loss", loss)
+        self.log(
+            "train_accuracy_winner",
+            (y_hat.argmax(dim=1) == winner.argmax(dim=1)).float().mean(),
+        )
+        self.log(
+            "train_accuracy_best_q",
+            (y_hat.argmax(dim=1) == best_q.argmax(dim=1)).float().mean(),
+        )
 
         return loss
 
