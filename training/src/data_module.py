@@ -1,4 +1,6 @@
 from glob import glob
+import warnings
+import torch
 import lightning as L
 from src.lc0.chunkparser import ChunkParser
 
@@ -25,15 +27,31 @@ class Lc0DataModule(L.LightningDataModule):
         )
 
     def train_dataloader(self):
-        return self.parser.parse()
+        for batch in self.parser.parse():
+            planes, probs, winner, best_q, plies_left = batch
 
-    def teardown(self, stage: str):
-        self.file.close()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                planes = torch.frombuffer(planes, dtype=torch.float32)
+                probs = torch.frombuffer(probs, dtype=torch.float32)
+                winner = torch.frombuffer(winner, dtype=torch.float32)
+                best_q = torch.frombuffer(best_q, dtype=torch.float32)
+                plies_left = torch.frombuffer(plies_left, dtype=torch.float32)
+
+            planes = planes.reshape(-1, 112, 8, 8)
+            probs = probs.reshape(-1, 1858)
+            winner = winner.reshape(-1, 3)
+            best_q = best_q.reshape(-1, 3)
+            plies_left = plies_left.reshape(-1, 1)
+
+            board = planes[:, :12, :, :]
+            castling_rights = planes[:, 104:108, 0, 0]
+
+            yield (board, castling_rights, probs, winner, best_q, plies_left)
 
 
 # Testing code
 if __name__ == "__main__":
-    import numpy as np
     from src.lc0.policy_index import policy_index
 
     FILE_PATH = "/Users/maxence/leela-data/*/training.*.gz"
@@ -43,46 +61,37 @@ if __name__ == "__main__":
     dm.setup("fit")
     dl = dm.train_dataloader()
     batch = next(iter(dl))
-    (planes, probs, winner, best_q, plies_left) = batch
-
-    planes = np.frombuffer(planes, dtype=np.float32)
-    probs = np.frombuffer(probs, dtype=np.float32)
-    winner = np.frombuffer(winner, dtype=np.float32)
-    best_q = np.frombuffer(best_q, dtype=np.float32)
-    plies_left = np.frombuffer(plies_left, dtype=np.float32)
-
-    planes = planes.reshape(-1, 112, 8, 8)
-    probs = probs.reshape(-1, 1858)
-    winner = winner.reshape(-1, 3)
-    best_q = best_q.reshape(-1, 3)
-    plies_left = plies_left.reshape(-1, 1)
+    (board, castling_rights, probs, winner, best_q, plies_left) = batch
 
     for i in range(NUM_POSITIONS):
-        # Decode board state
+        print("Board:")
         PIECES = "PNBRQKpnbrqk"
-        board = "        \n" * 8
-        for piece_id, piece in enumerate(PIECES):
-            for x in range(8):
-                for y in range(8):
-                    if planes[i][piece_id][y][x] == 1:
-                        board = board[: x + 9 * y] + piece + board[x + 9 * y + 1 :]
-        us_oo = planes[i][104][0][0]
-        us_ooo = planes[i][105][0][0]
-        them_oo = planes[i][106][0][0]
-        them_ooo = planes[i][107][0][0]
+        for x in range(8):
+            for y in range(8):
+                for piece_id, piece in enumerate(PIECES):
+                    if board[i][piece_id][x][y] == 1:
+                        print(piece, end="")
+                        break
+                else:
+                    print(".", end="")
+            print()
 
-        # Decode policy
+        [us_oo, us_ooo, them_oo, them_ooo] = castling_rights[i]
+        print(
+            "Castling rights: "
+            f"{'K' if us_oo else '-'}"
+            f"{'Q' if us_ooo else '-'}"
+            f"{'k' if them_oo else '-'}"
+            f"{'q' if them_ooo else '-'}"
+        )
+        print()
+
+        print("Policy:")
         policy = zip(policy_index, list(probs[i]))
         policy = [(move, prob) for move, prob in policy if prob != -1]
         policy = sorted(policy, key=lambda x: x[1], reverse=True)
-
-        print("Board:")
-        print(board)
-        print(f"Castling rights: {"K" if us_oo else "-"}{"Q" if us_ooo else "-"}{"k" if them_oo else "-"}{"q" if them_ooo else "-"}")
-
-        print("Policy:")
         for move, prob in policy:
-            print(f"{move}: {prob}")
+            print(f"{move}: {prob:.2f}")
         print()
 
         print(f"Result (WDL): {winner[i]}")
