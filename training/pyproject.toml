@@ -12,6 +12,7 @@ python = "^3.12"
 torch = "^2.4.0"
 lightning = "^2.4.0"
 numpy = "^2.0.1"
+wandb = "^0.19.1"
 
 
 [build-system]

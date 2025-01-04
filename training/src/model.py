@@ -12,6 +12,7 @@ OUTPUT_DIM = 3
 class Model(L.LightningModule):
     def __init__(self):
         super().__init__()
+        self.save_hyperparameters()
         self.model = nn.Sequential(
             nn.Linear(INPUT_DIM, HIDDEN_DIM),
             nn.ReLU(),

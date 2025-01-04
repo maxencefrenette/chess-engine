@@ -1,6 +1,6 @@
-training/src/lightning_logs/
-
-engine/.zig-cache/
-engine/zig-out/
+# Training artifacts
+training/lightning_logs/
+training/wandb/
+training/chess-engine/
 
 __pycache__/
