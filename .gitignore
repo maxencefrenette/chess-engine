@@ -4,3 +4,5 @@ training/wandb/
 training/chess-engine/
 
 __pycache__/
+
+.env

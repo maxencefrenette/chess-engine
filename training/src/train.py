@@ -2,9 +2,14 @@ from src.model import Model
 from src.data_module import Lc0Data
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
+import os
+from dotenv import load_dotenv
 
 
 if __name__ == "__main__":
+    # Load environment variables
+    load_dotenv()
+    
     # Initialize wandb logger
     wandb_logger = WandbLogger(
         project="chess-engine",
@@ -13,7 +18,7 @@ if __name__ == "__main__":
 
     model = Model()
     dataset = Lc0Data(
-        file_path="/Users/maxence/leela-data/*/training.*.gz",
+        file_path=os.getenv("LEELA_DATA_PATH"),
         batch_size=1024,
     )
     
