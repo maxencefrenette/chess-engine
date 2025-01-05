@@ -12,7 +12,7 @@ class Model(L.LightningModule):
         learning_rate: float = 1e-2,
     ):
         super().__init__()
-        
+
         # Fixed architecture parameters
         self.input_dim = 12 * 8 * 8 + 4  # board state + castling rights
         self.output_dim = 3
@@ -45,9 +45,9 @@ class Model(L.LightningModule):
 
         y_hat = self.model(x)
         loss = nn.functional.cross_entropy(y_hat, y)
-        self.log("train_loss", loss)
+        self.log("train_value_loss", loss)
         self.log(
-            "train_accuracy_best_q",
+            "train_value_accuracy",
             (y_hat.argmax(dim=1) == best_q.argmax(dim=1)).float().mean(),
         )
 
