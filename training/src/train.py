@@ -28,7 +28,7 @@ if __name__ == "__main__":
     )
     
     trainer = L.Trainer(
-        max_steps=1000,
+        max_steps=200,
         log_every_n_steps=5,
         logger=wandb_logger,
     )
