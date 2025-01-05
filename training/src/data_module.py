@@ -6,10 +6,10 @@ from src.lc0.chunkparser import ChunkParser
 
 
 class Lc0Data(L.LightningDataModule):
-    def __init__(self, file_path: str, batch_size: int):
+    def __init__(self, file_path: str, batch_size: int, shuffle_size: int, sample: int):
         super().__init__()
         self.file_path = file_path
-        self.batch_size = batch_size
+        self.save_hyperparameters(ignore=["file_path"])
 
     def prepare_data(self):
         pass
@@ -22,9 +22,9 @@ class Lc0Data(L.LightningDataModule):
         self.parser = ChunkParser(
             chunks=chunks,
             expected_input_format=1,
-            shuffle_size=8192,
-            sample=32,
-            batch_size=self.batch_size,
+            shuffle_size=self.hparams.shuffle_size,
+            sample=self.hparams.sample,
+            batch_size=self.hparams.batch_size,
         )
 
     def train_dataloader(self):

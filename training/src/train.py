@@ -23,10 +23,12 @@ if __name__ == "__main__":
     dataset = Lc0Data(
         file_path=os.getenv("LEELA_DATA_PATH"),
         batch_size=1024,
+        shuffle_size=8192,
+        sample=16,
     )
     
     trainer = L.Trainer(
-        max_steps=200,
+        max_steps=1000,
         log_every_n_steps=5,
         logger=wandb_logger,
     )
