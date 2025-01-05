@@ -17,7 +17,6 @@ class Model(L.LightningModule):
         self.input_dim = 12 * 8 * 8 + 4  # board state + castling rights
         self.output_dim = 3
         
-        # Save tunable hyperparameters
         self.save_hyperparameters()
         
         self.model = nn.Sequential(
