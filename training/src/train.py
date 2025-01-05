@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 
 if __name__ == "__main__":
-    # Load environment variables
     load_dotenv()
     
     # Initialize wandb logger
@@ -16,7 +15,11 @@ if __name__ == "__main__":
         name=None,
     )
 
-    model = Model()
+    model = Model(
+        hidden_dim=32,
+        hidden_layers=4,
+        learning_rate=1e-2,
+    )
     dataset = Lc0Data(
         file_path=os.getenv("LEELA_DATA_PATH"),
         batch_size=1024,
