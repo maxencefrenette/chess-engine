@@ -1,0 +1,67 @@
+>A0 Lite
+<uci
+>id name A0 Lite
+>id author Dietrich Kappe
+>uciok
+<go nodes 100
+Loading network
+>info string e2e4 2 	(P: 5.0%) 	(Q: -0.33333)
+>info string d2d4 2 	(P: 5.0%) 	(Q: -0.33333)
+>info string c2c4 2 	(P: 5.0%) 	(Q: -0.33333)
+>info string b2b4 2 	(P: 5.0%) 	(Q: -0.33333)
+>info string a2a4 2 	(P: 5.0%) 	(Q: -0.33333)
+>info string g1f3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string b1c3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string b1a3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string h2h3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string g2g3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string f2f3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string e2e3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string d2d3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string c2c3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string b2b3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string a2a3 3 	(P: 5.0%) 	(Q: -0.25)
+>info string h2h4 3 	(P: 5.0%) 	(Q: -0.25)
+>info string g2g4 3 	(P: 5.0%) 	(Q: -0.25)
+>info string f2f4 3 	(P: 5.0%) 	(Q: -0.25)
+>info string g1h3 47 	(P: 5.0%) 	(Q: 0.01107)
+>info depth 1 seldepth 1 score cp 3 nodes 100 nps 2834 pv g1h3
+>bestmove g1h3
+<[A[A[B[B
+<go nodes 10000
+>info string b1a3 147 	(P: 5.0%) 	(Q: -0.01579)
+>info string h2h3 162 	(P: 5.0%) 	(Q: -0.00613)
+>info string h2h4 209 	(P: 5.0%) 	(Q: 0.01419)
+>info string f2f3 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string e2e3 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string d2d3 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string c2c3 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string b2b3 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string a2a3 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string g2g4 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string f2f4 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string e2e4 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string d2d4 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string c2c4 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string b2b4 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string a2a4 530 	(P: 5.0%) 	(Q: 0.05742)
+>info string g2g3 540 	(P: 5.0%) 	(Q: 0.05636)
+>info string g1h3 567 	(P: 5.0%) 	(Q: 0.05454)
+>info string g1f3 567 	(P: 5.0%) 	(Q: 0.05454)
+>info string b1c3 917 	(P: 5.0%) 	(Q: 0.07519)
+>info depth 1 seldepth 1 score cp 22 nodes 10000 nps 6438 pv b1c3
+>bestmove b1c3
+<exit
+<
+<
+Traceback (most recent call last):
+
+  File "/Users/maxence/Repos/chess-engine/engine/engine.py", line 137, in <module>
+    main()
+
+  File "/Users/maxence/Repos/chess-engine/engine/engine.py", line 75, in main
+    line = sys.stdin.readline()
+           ^^^^^^^^^^^^^^^^^^^^
+
+KeyboardInterrupt
+
