@@ -1,8 +1,14 @@
+benchmarks/config.json
+benchmarks/*.log
+benchmarks/*.pgn
+engine/a0lite.log
+
 # Training artifacts
 training/lightning_logs/
 training/wandb/
 training/chess-engine/
 
-__pycache__/
-
 .env
+
+__pycache__/
+.DS_Store
