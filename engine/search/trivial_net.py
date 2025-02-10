@@ -1,8 +1,15 @@
 import chess
+from training.model import Model
+from pathlib import Path
 import math
 
+
 class TrivialNet:
-    def evaluate(self, board : chess.Board):
+    def __init__(self, model_path: Path):
+        self.model = Model.load_from_checkpoint(model_path)
+        self.model.eval()
+
+    def evaluate(self, board: chess.Board):
         """
         Evaluate the board from the perspective of the side to move.
         """
@@ -17,13 +24,13 @@ class TrivialNet:
                 # Always return -1.0 when checkmated
                 # and we are checkmated because it's our turn to move
                 return dict(), -1.0
-        
+
         policy = self.evaluate_policy(board)
         value = self.evaluate_value(board)
-        
+
         return policy, value
-    
-    def evaluate_policy(self, board : chess.Board):
+
+    def evaluate_policy(self, board: chess.Board):
         """
         Evaluate the policy of a position from the perspective of the side to move.
 
@@ -32,8 +39,7 @@ class TrivialNet:
         legal_moves = list(board.legal_moves)
         return {move.uci(): 1 / len(legal_moves) for move in legal_moves}
 
-
-    def evaluate_value(self, board : chess.Board):
+    def evaluate_value(self, board: chess.Board):
         """
         Evaluate the expected value of a position from the perspective of the side to move.
         """
@@ -43,18 +49,22 @@ class TrivialNet:
             chess.BISHOP: 3,
             chess.ROOK: 5,
             chess.QUEEN: 9,
-            chess.KING: 0  # King not counted in material
+            chess.KING: 0,  # King not counted in material
         }
 
         # Calculate material difference
-        white_material = sum(len(board.pieces(piece_type, chess.WHITE)) * value 
-                           for piece_type, value in piece_values.items())
-        black_material = sum(len(board.pieces(piece_type, chess.BLACK)) * value 
-                           for piece_type, value in piece_values.items())
-        
+        white_material = sum(
+            len(board.pieces(piece_type, chess.WHITE)) * value
+            for piece_type, value in piece_values.items()
+        )
+        black_material = sum(
+            len(board.pieces(piece_type, chess.BLACK)) * value
+            for piece_type, value in piece_values.items()
+        )
+
         # Calculate relative score from white's perspective
         material_diff = white_material - black_material
-        
+
         # Flip material_diff if it's black to move
         if not board.turn:  # board.turn is False for black
             material_diff = -material_diff
@@ -62,5 +72,5 @@ class TrivialNet:
         # Normalize score to [-1, 1] using tanh
         # Division by 20 to get reasonable scaling (full queen = 9 points)
         score = math.tanh(material_diff / 20)
-        
+
         return score

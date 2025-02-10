@@ -4,6 +4,8 @@ import lightning as L
 from lightning.pytorch.loggers import WandbLogger
 import os
 from dotenv import load_dotenv
+from pathlib import Path
+import torch
 
 
 if __name__ == "__main__":
@@ -34,3 +36,6 @@ if __name__ == "__main__":
     )
     
     trainer.fit(model, dataset)
+
+    path = Path(os.getenv("MODELS_PATH")) / f"{wandb_logger.experiment.name}.pth"
+    trainer.save_checkpoint(path)

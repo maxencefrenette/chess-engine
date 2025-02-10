@@ -2,7 +2,7 @@
 
 ## Inputs
 
-- Board: A 1-hot tensor of dimensions (batch_size, 12, 64, 64) representing the input board. Pieces are encoded in this order: "PNBRQKpnbrqk", where capital letters represent the side to move and lowercase letters represent the side to move next.
+- Board: A 1-hot tensor of dimensions (batch_size, 12, 8, 8) representing the input board. Pieces are encoded in this order: "PNBRQKpnbrqk", where capital letters represent the side to move and lowercase letters represent the side to move next.
 - Castling rights: A tensor of dimensions (batch_size, 4) representing the castling rights of the current position. The order of the castling rights is "KQkq".
 - En passant (TODO): A tensor of dimensions (batch_size, 8) representing the en passant squares of the current position.
 

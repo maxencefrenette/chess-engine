@@ -55,3 +55,7 @@ class Model(L.LightningModule):
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         return optimizer
+
+    def predict(self, features: torch.Tensor):
+        with torch.no_grad():
+            return self.model(features)

@@ -4,7 +4,7 @@ benchmarks/*.pgn
 engine/a0lite.log
 
 # Training artifacts
-training/lightning_logs/
+training/training/lightning_logs/
 training/wandb/
 training/chess-engine/
 

@@ -3,12 +3,13 @@ name = "engine"
 version = "0.1.0"
 description = ""
 authors = ["Maxence Frenette <maxence.frenette@gmail.com>"]
-license = "GPL-3.0-or-later"
-readme = "README.md"
+license = "GPL-3.0-or-later"    
 
 [tool.poetry.dependencies]
 python = "^3.12"
 python-chess = "^1.999"
+training = {path = "../training", develop = true}
+torch = "^2.6.0"
 
 
 [build-system]
