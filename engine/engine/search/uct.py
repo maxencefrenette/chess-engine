@@ -3,12 +3,13 @@ import math
 import chess
 from collections import OrderedDict
 from time import time
-from search.util import cp
+from .util import cp
 
 FPU = -1.0
 FPU_ROOT = 0.0
 
-class UCTNode():
+
+class UCTNode:
     def __init__(self, board=None, parent=None, move=None, prior=0):
         self.board = board
         self.move = move
@@ -26,12 +27,12 @@ class UCTNode():
         return self.total_value / (1 + self.number_visits)
 
     def U(self):  # returns float
-        return (math.sqrt(self.parent.number_visits)
-                * self.prior / (1 + self.number_visits))
+        return (
+            math.sqrt(self.parent.number_visits) * self.prior / (1 + self.number_visits)
+        )
 
     def best_child(self, C):
-        return max(self.children.values(),
-                   key=lambda node: node.Q() + C*node.U())
+        return max(self.children.values(), key=lambda node: node.Q() + C * node.U())
 
     def select_leaf(self, C):
         current = self
@@ -56,22 +57,39 @@ class UCTNode():
         turnfactor = -1
         while current.parent is not None:
             current.number_visits += 1
-            current.total_value += (value_estimate *
-                                    turnfactor)
+            current.total_value += value_estimate * turnfactor
             current = current.parent
             turnfactor *= -1
         current.number_visits += 1
 
+
 def get_best_move(root):
-    bestmove, node = max(root.children.items(), key=lambda item: (item[1].number_visits, item[1].Q()))
-    score = int(round(cp(node.Q()),0))
+    bestmove, node = max(
+        root.children.items(), key=lambda item: (item[1].number_visits, item[1].Q())
+    )
+    score = int(round(cp(node.Q()), 0))
     return bestmove, node, score
 
-def send_info(send, bestmove, count, delta, score):
-    if send != None:                
-        send("info depth 1 seldepth 1 score cp {} nodes {} nps {} pv {}".format(score, count, int(round(count/delta, 0)), bestmove))
 
-def UCT_search(board, num_reads, net=None, C=1.0, verbose=False, max_time=None, tree=None, send=None):
+def send_info(send, bestmove, count, delta, score):
+    if send != None:
+        send(
+            "info depth 1 seldepth 1 score cp {} nodes {} nps {} pv {}".format(
+                score, count, int(round(count / delta, 0)), bestmove
+            )
+        )
+
+
+def UCT_search(
+    board,
+    num_reads,
+    net=None,
+    C=1.0,
+    verbose=False,
+    max_time=None,
+    tree=None,
+    send=None,
+):
     if max_time == None:
         # search for a maximum of an hour
         max_time = 3600.0
@@ -90,19 +108,30 @@ def UCT_search(board, num_reads, net=None, C=1.0, verbose=False, max_time=None, 
         leaf.backup(value_estimate)
         now = time()
         delta = now - start
-        if (delta - delta_last > 5):
+        if delta - delta_last > 5:
             delta_last = delta
             bestmove, node, score = get_best_move(root)
             send_info(send, bestmove, count, delta, score)
-              
+
         if (time != None) and (delta > max_time):
             break
 
     bestmove, node, score = get_best_move(root)
     if send != None:
-        for nd in sorted(root.children.items(), key= lambda item: item[1].number_visits):
-            send("info string {} {} \t(P: {}%) \t(Q: {})".format(nd[1].move, nd[1].number_visits, round(nd[1].prior*100,2), round(nd[1].Q(), 5)))
-        send("info depth 1 seldepth 1 score cp {} nodes {} nps {} pv {}".format(score, count, int(round(count/delta, 0)), bestmove))
+        for nd in sorted(root.children.items(), key=lambda item: item[1].number_visits):
+            send(
+                "info string {} {} \t(P: {}%) \t(Q: {})".format(
+                    nd[1].move,
+                    nd[1].number_visits,
+                    round(nd[1].prior * 100, 2),
+                    round(nd[1].Q(), 5),
+                )
+            )
+        send(
+            "info depth 1 seldepth 1 score cp {} nodes {} nps {} pv {}".format(
+                score, count, int(round(count / delta, 0)), bestmove
+            )
+        )
 
     # if we have a bad score, go for a draw
     return bestmove, score

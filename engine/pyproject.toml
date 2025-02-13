@@ -3,7 +3,10 @@ name = "engine"
 version = "0.1.0"
 description = ""
 authors = ["Maxence Frenette <maxence.frenette@gmail.com>"]
-license = "GPL-3.0-or-later"    
+license = "GPL-3.0-or-later"
+packages = [
+    {include = "engine", from = "."}
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
