@@ -91,36 +91,8 @@ class TrivialNet:
 
     def evaluate_value(self, board: chess.Board):
         """
-        Evaluate the expected value of a position from the perspective of the side to move.
+        Evaluate the expected value of a position using the neural network.
         """
-        piece_values = {
-            chess.PAWN: 1,
-            chess.KNIGHT: 3,
-            chess.BISHOP: 3,
-            chess.ROOK: 5,
-            chess.QUEEN: 9,
-            chess.KING: 0,  # King not counted in material
-        }
-
-        # Calculate material difference
-        white_material = sum(
-            len(board.pieces(piece_type, chess.WHITE)) * value
-            for piece_type, value in piece_values.items()
-        )
-        black_material = sum(
-            len(board.pieces(piece_type, chess.BLACK)) * value
-            for piece_type, value in piece_values.items()
-        )
-
-        # Calculate relative score from white's perspective
-        material_diff = white_material - black_material
-
-        # Flip material_diff if it's black to move
-        if not board.turn:  # board.turn is False for black
-            material_diff = -material_diff
-
-        # Normalize score to [-1, 1] using tanh
-        # Division by 20 to get reasonable scaling (full queen = 9 points)
-        score = math.tanh(material_diff / 20)
-
-        return score
+        features = board_to_features(board)
+        wdl = self.model.predict(features)
+        return torch.dot(torch.tensor([1.0, 0.0, -1.0]), wdl).item()
