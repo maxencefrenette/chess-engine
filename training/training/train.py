@@ -8,7 +8,7 @@ from pathlib import Path
 import argparse
 import yaml
 
-def train(config: dict):
+def train(config: dict, verbose: bool = False) -> dict:
     # Initialize wandb logger
     wandb_logger = WandbLogger(
         project="chess-engine",
@@ -27,12 +27,15 @@ def train(config: dict):
         max_steps=200,
         log_every_n_steps=5,
         logger=wandb_logger,
+        enable_model_summary=not verbose,
     )
     
     trainer.fit(model, dataset)
 
     path = Path(os.getenv("MODELS_PATH")) / f"{wandb_logger.experiment.name}.pth"
     trainer.save_checkpoint(path)
+
+    return trainer.callback_metrics
 
 if __name__ == "__main__":
     load_dotenv()
@@ -50,4 +53,8 @@ if __name__ == "__main__":
     with open(Path(__file__).parent / f"configs/{args.config}.yaml") as f:
         config = yaml.safe_load(f)["model"]
 
-    train(config)
+    metrics = train(config, verbose=True)
+
+    print("Metrics:")
+    for key, value in metrics.items():
+        print(f"  {key:20}: {value:.4f}")
