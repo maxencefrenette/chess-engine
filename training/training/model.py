@@ -2,27 +2,21 @@ import torch
 import torch.nn as nn
 import lightning as L
 from torch import optim
-import yaml
-from pathlib import Path
 
 
 class Model(L.LightningModule):
     def __init__(
         self,
-        config_path: str = "configs/pico.yaml",
+        config: dict,
     ):
         super().__init__()
-
-        # Load config
-        with open(Path(__file__).parent / config_path) as f:
-            config = yaml.safe_load(f)["model"]
+        self.save_hyperparameters(config)
         
         # Fixed architecture parameters
         self.input_dim = 12 * 8 * 8 + 4  # board state + castling rights
         self.output_dim = 3
         
-        self.save_hyperparameters(config)
-        
+        # Model
         self.model = nn.Sequential(
             nn.Linear(self.input_dim, self.hparams.hidden_dim),
             nn.ReLU(),
