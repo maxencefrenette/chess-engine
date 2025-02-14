@@ -1,15 +1,29 @@
-from src.model import Model
-from src.data_module import Lc0Data
+from training.model import Model
+from training.data_module import Lc0Data
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
 import os
 from dotenv import load_dotenv
 from pathlib import Path
 import torch
+import argparse
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Train the chess model')
+    parser.add_argument(
+        '--config',
+        type=str,
+        choices=['pico'],
+        default='pico',
+        help='Name of the config file to use for model hyperparameters'
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
     load_dotenv()
+    args = parse_args()
     
     # Initialize wandb logger
     wandb_logger = WandbLogger(
@@ -18,9 +32,7 @@ if __name__ == "__main__":
     )
 
     model = Model(
-        hidden_dim=32,
-        hidden_layers=4,
-        learning_rate=1e-2,
+        config_path=f"configs/{args.config}.yaml",
     )
     dataset = Lc0Data(
         file_path=os.getenv("LEELA_DATA_PATH"),

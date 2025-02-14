@@ -2,7 +2,7 @@ from glob import glob
 import warnings
 import torch
 import lightning as L
-from src.lc0.chunkparser import ChunkParser
+from training.lc0.chunkparser import ChunkParser
 
 
 class Lc0Data(L.LightningDataModule):
@@ -53,7 +53,7 @@ class Lc0Data(L.LightningDataModule):
 
 # Testing code
 if __name__ == "__main__":
-    from src.lc0.policy_index import policy_index
+    from training.lc0.policy_index import policy_index
 
     FILE_PATH = "/Users/maxence/leela-data/*/training.*.gz"
     NUM_POSITIONS = 8
