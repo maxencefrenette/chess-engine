@@ -1,20 +1,24 @@
 [tool.poetry]
-name = "training"
+name = "chess_engine"
 version = "0.1.0"
 description = ""
 authors = ["Maxence Frenette <maxence.frenette@gmail.com>"]
 license = "GPL-3.0-or-later"
 packages = [
-    { include = "training", from = "." }
+    {include = "src", from = "."}
 ]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-torch = "^2.4.0"
+python-chess = "^1.999"
+torch = "^2.6.0"
+pytest = "^8.3.4"
 lightning = "^2.4.0"
-numpy = "^2.0.1"
-wandb = "^0.19.1"
 python-dotenv = "^1.0.1"
+numpy = "^2.0.1"
+
+[tool.poetry.group.training.dependencies]
+wandb = "^0.19.1"
 marimo = "^0.11.4"
 altair = "^5.5.0"
 pandas = "^2.2.3"

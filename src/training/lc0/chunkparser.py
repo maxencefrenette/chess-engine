@@ -62,7 +62,7 @@ import itertools
 import multiprocessing as mp
 import numpy as np
 import random
-import training.lc0.shufflebuffer as sb
+import src.training.lc0.shufflebuffer as sb
 import struct
 import unittest
 import gzip

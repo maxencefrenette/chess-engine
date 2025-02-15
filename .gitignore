@@ -1,12 +1,12 @@
 benchmarks/config.json
 benchmarks/*.log
 benchmarks/*.pgn
-engine/a0lite.log
+a0lite.log
 
 # Training artifacts
-training/training/lightning_logs/
-training/wandb/
-training/chess-engine/
+lightning_logs/
+wandb/
+
 
 .env
 

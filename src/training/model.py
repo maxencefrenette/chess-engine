@@ -7,10 +7,12 @@ from torch import optim
 class Model(L.LightningModule):
     def __init__(
         self,
-        config: dict,
+        config: dict = None,
     ):
         super().__init__()
-        self.save_hyperparameters(config)
+        
+        if config is not None:
+            self.save_hyperparameters(config)
         
         # Fixed architecture parameters
         self.input_dim = 12 * 8 * 8 + 4  # board state + castling rights

@@ -14,7 +14,7 @@ MINTIME = 0.1
 TIMEDIV = 25.0
 NODES = 800
 C = 3.0
-MODEL_PATH = Path(os.getenv("MODELS_PATH")) / "swift-serenity-12.pth"
+MODEL_PATH = Path(os.getenv("MODELS_PATH")) / "appealing-infatuation-19.pth"
 
 
 logfile = open("a0lite.log", "w")

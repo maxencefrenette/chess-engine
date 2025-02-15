@@ -1,5 +1,5 @@
-from training.model import Model
-from training.data_module import Lc0Data
+from src.training.model import Model
+from src.training.data_module import Lc0Data
 import lightning as L
 from lightning.pytorch.loggers import WandbLogger
 import os

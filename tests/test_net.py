@@ -1,4 +1,4 @@
-from engine.search.trivial_net import board_to_features
+from src.engine.search.trivial_net import board_to_features
 import chess
 import torch
 

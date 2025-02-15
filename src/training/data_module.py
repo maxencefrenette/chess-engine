@@ -2,7 +2,7 @@ from glob import glob
 import warnings
 import torch
 import lightning as L
-from training.lc0.chunkparser import ChunkParser
+from src.training.lc0.chunkparser import ChunkParser
 
 
 class Lc0Data(L.LightningDataModule):

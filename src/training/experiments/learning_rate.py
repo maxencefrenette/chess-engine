@@ -7,7 +7,7 @@ app = marimo.App(width="medium", auto_download=["html"])
 @app.cell
 def _(__file__):
     import marimo as mo
-    from training.train import train
+    from src.training.train import train
     from pathlib import Path
     from dotenv import load_dotenv
     import yaml
@@ -22,7 +22,7 @@ def _(Path, __file__, mo, np, train, yaml):
     config = "pico"
     learning_rates = np.geomspace(0.005, 0.1, num=10)
 
-    with open(Path(__file__).parent.parent / f"training/configs/{config}.yaml") as f:
+    with open(Path(__file__).parent / f"configs/{config}.yaml") as f:
         config = yaml.safe_load(f)["model"]
 
     results = {}

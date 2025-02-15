@@ -1,7 +1,6 @@
 import chess
-from training.model import Model
+from src.training.model import Model
 from pathlib import Path
-import math
 import torch
 
 
