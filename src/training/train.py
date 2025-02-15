@@ -37,7 +37,7 @@ def train(config: dict, verbose: bool = False) -> dict:
 
     return trainer.callback_metrics
 
-if __name__ == "__main__":
+def main():
     load_dotenv()
 
     parser = argparse.ArgumentParser(description='Train the chess model')

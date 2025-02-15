@@ -1,4 +1,4 @@
-import search
+import src.engine.search as search
 import chess
 import chess.pgn
 import sys
@@ -72,7 +72,6 @@ def load_network():
 
 
 def main():
-
     send("A0 Lite")
     board = chess.Board()
     nn = None
