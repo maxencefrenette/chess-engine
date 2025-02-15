@@ -6,10 +6,10 @@ from src.training.lc0.chunkparser import ChunkParser
 
 
 class Lc0Data(L.LightningDataModule):
-    def __init__(self, file_path: str, batch_size: int, shuffle_size: int, sample: int):
+    def __init__(self, config: dict, file_path: str):
         super().__init__()
         self.file_path = file_path
-        self.save_hyperparameters(ignore=["file_path"])
+        self.save_hyperparameters(config)
 
     def prepare_data(self):
         pass

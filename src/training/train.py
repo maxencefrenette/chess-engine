@@ -13,18 +13,17 @@ def train(config: dict, verbose: bool = False) -> dict:
     wandb_logger = WandbLogger(
         project="chess-engine",
         name=None,
+
     )
 
-    model = Model(config)
+    model = Model(config["model"])
     dataset = Lc0Data(
+        config=config["training"],
         file_path=os.getenv("LEELA_DATA_PATH"),
-        batch_size=1024,
-        shuffle_size=8192,
-        sample=16,
     )
     
     trainer = L.Trainer(
-        max_steps=200,
+        max_steps=config["training"]["steps"],
         log_every_n_steps=5,
         logger=wandb_logger,
         enable_model_summary=not verbose,
@@ -37,24 +36,21 @@ def train(config: dict, verbose: bool = False) -> dict:
 
     return trainer.callback_metrics
 
-def main():
+def train_with_config(config: str):
     load_dotenv()
 
-    parser = argparse.ArgumentParser(description='Train the chess model')
-    parser.add_argument(
-        '--config',
-        type=str,
-        default='pico',
-        help='Name of the config file to use for model hyperparameters'
-    )
-    args = parser.parse_args()
-
     # Load config
-    with open(Path(__file__).parent / f"configs/{args.config}.yaml") as f:
-        config = yaml.safe_load(f)["model"]
+    with open(Path(__file__).parent / f"configs/{config}.yaml") as f:
+        config = yaml.safe_load(f)
 
     metrics = train(config, verbose=True)
 
     print("Metrics:")
     for key, value in metrics.items():
         print(f"  {key:20}: {value:.4f}")
+
+def main_debug():
+    train_with_config("debug")
+
+def main_pico():
+    train_with_config("pico")

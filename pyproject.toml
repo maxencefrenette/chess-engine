@@ -27,7 +27,8 @@ default-groups = ["training"]
 
 [project.scripts]
 engine = "src.engine.engine:main"
-train = "src.training.train:main"
+train_debug = "src.training.train:main_debug"
+train_pico = "src.training.train:main_pico"
 
 
 [tool.hatch.build.targets.wheel]
