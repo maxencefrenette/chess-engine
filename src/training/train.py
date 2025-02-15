@@ -1,20 +1,20 @@
 from src.training.model import Model
 from src.training.data_module import Lc0Data
 import lightning as L
-from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch.loggers import WandbLogger, CSVLogger
 import os
 from dotenv import load_dotenv
 from pathlib import Path
-import argparse
 import yaml
 
-def train(config: dict, verbose: bool = False) -> dict:
+def train(config: dict, *, verbose: bool = False) -> dict:
     # Initialize wandb logger
+    csv_logger = CSVLogger(save_dir=Path(__file__).parent)
     wandb_logger = WandbLogger(
         project="chess-engine",
         name=None,
-
     )
+    loggers = [csv_logger, wandb_logger]
 
     model = Model(config["model"])
     dataset = Lc0Data(
@@ -25,7 +25,7 @@ def train(config: dict, verbose: bool = False) -> dict:
     trainer = L.Trainer(
         max_steps=config["training"]["steps"],
         log_every_n_steps=5,
-        logger=wandb_logger,
+        logger=loggers,
         enable_model_summary=not verbose,
     )
     
@@ -34,7 +34,7 @@ def train(config: dict, verbose: bool = False) -> dict:
     path = Path(os.getenv("MODELS_PATH")) / f"{wandb_logger.experiment.name}.pth"
     trainer.save_checkpoint(path)
 
-    return trainer.callback_metrics
+    return trainer.logged_metrics, 
 
 def train_with_config(config: str):
     load_dotenv()
