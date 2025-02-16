@@ -6,27 +6,33 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 import yaml
+from src.training.flops_logger import FlopsLogger
+from typing import Optional
 
-def train(config: dict, *, verbose: bool = False) -> dict:
-    # Initialize wandb logger
-    csv_logger = CSVLogger(save_dir=Path(__file__).parent)
+
+def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger] = None) -> dict:
+    # Initialize wandb loggerloggers
+    if csv_logger is None:
+        csv_logger = CSVLogger(save_dir=Path(__file__).parent)
     wandb_logger = WandbLogger(
         project="chess-engine",
         name=None,
     )
     loggers = [csv_logger, wandb_logger]
 
+    flops_logger = FlopsLogger(config)
+
     model = Model(config["model"])
     dataset = Lc0Data(
         config=config["training"],
         file_path=os.getenv("LEELA_DATA_PATH"),
     )
-    
     trainer = L.Trainer(
         max_steps=config["training"]["steps"],
-        log_every_n_steps=5,
+        log_every_n_steps=1,
         logger=loggers,
         enable_model_summary=not verbose,
+        callbacks=[flops_logger],
     )
     
     trainer.fit(model, dataset)
