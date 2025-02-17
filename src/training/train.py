@@ -29,7 +29,7 @@ def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger
     )
     trainer = L.Trainer(
         max_steps=config["training"]["steps"],
-        log_every_n_steps=1,
+        log_every_n_steps=5,
         logger=loggers,
         enable_model_summary=not verbose,
         callbacks=[flops_logger],

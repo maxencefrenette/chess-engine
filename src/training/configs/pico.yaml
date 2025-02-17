@@ -5,6 +5,6 @@ model:
 
 training:
     batch_size: 64
-    steps: 1500
+    steps: 5000
     shuffle_size: 16384
     sample: 16

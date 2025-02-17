@@ -101,7 +101,7 @@ def _(Path, __file__, configs, mo, pd, yaml):
     df = pd.DataFrame(results)
 
     chart = alt.Chart(df).mark_point().encode(
-        x=alt.X("learning_rate").scale(type="log", nice=False, padding=20),
+        x=alt.X("learning_rate").scale(type="log", nice=False),
         y=alt.Y("loss").scale(zero=False, padding=20),
         color="config"
     ).properties(
@@ -141,8 +141,8 @@ def _(alt, mo, pd, training_logs):
 
     def make_loss_chart(df, config_name: str):
         return alt.Chart(df[df["config"] == config_name]).mark_line().encode(
-            x="step",
-            y=alt.Y("train_value_loss").scale(zero=False, padding=20),
+            x=alt.X("step").scale(zero=False, nice=False),
+            y=alt.Y("train_value_loss").scale(zero=False),
             color=alt.Color("learning_rate:Q").scale(type="log", scheme="viridis"),
             tooltip=["learning_rate"]
         ).properties(

@@ -4,4 +4,4 @@ hidden_layers: 2
 learning_rate: 0.002
 sample: 16
 shuffle_size: 16384
-steps: 2000
+steps: 15000
