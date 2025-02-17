@@ -33,7 +33,7 @@ def _(CSVLogger, Path, __file__, mo, np, run_button, train, yaml):
             config = yaml.safe_load(f)
 
         base_lr = config["model"]["learning_rate"]
-        learning_rates = np.geomspace(0.00001, 0.1, num=21).tolist()
+        learning_rates = np.geomspace(0.00001, 0.1, num=30).tolist()
 
         for i, lr in enumerate(mo.status.progress_bar(learning_rates)):
             config_copy = config.copy()
@@ -110,9 +110,6 @@ def _(alt, mo, pd, training_logs):
     df2['train_value_loss'] = df2.groupby('learning_rate')['train_value_loss'] \
         .transform(lambda x: x.rolling(50, center=True, closed="both").mean())
     df2 = df2.dropna(subset=["train_value_loss"])
-
-    df2 = df2[df2["learning_rate"] < 0.04]
-    df2 = df2[df2["learning_rate"] > 0.0004]
 
     loss_chart = alt.Chart(df2).mark_line().encode(
         x="step",

@@ -22,8 +22,8 @@ def _(__file__):
 @app.cell
 def _(mo):
     configs = {
-        "debug": 3,
-        "pico": 1,
+        "debug": 2,
+        "pico": 2,
     }
 
     checkboxes = {config: mo.ui.checkbox() for config in configs.keys()}
@@ -41,7 +41,6 @@ def _(
     __file__,
     configs,
     dictionnary,
-    mo,
     run_button,
     train,
     yaml,
@@ -57,9 +56,7 @@ def _(
             version=config_name,
         )
 
-        with mo.capture_stderr() as _stderr:
-            with mo.capture_stdout() as _stdout:
-                metrics = train(config, csv_logger=csv_logger)
+        metrics = train(config, csv_logger=csv_logger)
 
     if run_button.value:
         for c, steps_mult in configs.items():
@@ -90,9 +87,9 @@ def _(Path, __file__, configs, mo, np, pd):
 
     df = pd.concat(results, ignore_index=True)
     df['train_value_loss'] = df.groupby('config')['train_value_loss'] \
-        .transform(lambda x: x.rolling(100, center=True, closed="both").mean())
+        .transform(lambda x: x.rolling(150, center=True, closed="both").mean())
     df = df.dropna(subset=["train_value_loss"])
-    df = df[df["train_value_loss"] < 0.9]
+    df = df[df["train_value_loss"] < 1.1]
 
 
     chart = alt.Chart(df).mark_line().encode(
