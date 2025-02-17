@@ -15,15 +15,15 @@ def _(__file__):
     import pandas as pd
     from lightning.pytorch.loggers import CSVLogger
 
-    load_dotenv(Path(__file__).parents[2] / ".env")
+    load_dotenv(Path(__file__).parents[3] / ".env")
     return CSVLogger, Path, load_dotenv, mo, np, pd, train, yaml
 
 
 @app.cell
 def _(mo):
     configs = {
-        "debug": 10,
-        "pico": 3,
+        "debug": 3,
+        "pico": 1,
     }
 
     checkboxes = {config: mo.ui.checkbox() for config in configs.keys()}
@@ -42,7 +42,6 @@ def _(
     configs,
     dictionnary,
     mo,
-    pd,
     run_button,
     train,
     yaml,
@@ -62,14 +61,6 @@ def _(
             with mo.capture_stdout() as _stdout:
                 metrics = train(config, csv_logger=csv_logger)
 
-        # Get the most recent lightning_log
-        dir = Path(__file__).parents[1] / "lightning_logs"
-        files = list(dir.glob("version_*"))
-        version = max(int(f.stem.split("_")[-1]) for f in files)
-        path = dir / f"version_{version}" / "metrics.csv"
-        with open(path) as f:
-            metrics = pd.read_csv(f)
-
     if run_button.value:
         for c, steps_mult in configs.items():
             if dictionnary.value[c]:
@@ -78,7 +69,7 @@ def _(
 
 
 @app.cell
-def _(Path, __file__, configs, np, pd):
+def _(Path, __file__, configs, mo, np, pd):
     import altair as alt
 
     # eyeball fit a scaling law of the form L(C) = C_c / (C ^ alpha_c)
@@ -111,13 +102,18 @@ def _(Path, __file__, configs, np, pd):
         y=alt.Y("train_value_loss") \
             .axis(grid=False, values=np.linspace(0, 1, 51)) \
             .scale(type="log", nice=False),
-        color="config"
+        color="config",
+        tooltip=[
+            alt.Tooltip("flops", format=".1e"),
+            alt.Tooltip("train_value_loss", format=".3f"),
+            "step"
+        ]
     ).properties(
         width=500,
         height=500
     )
 
-    chart
+    mo.ui.altair_chart(chart)
     return C_c, alpha_c, alt, chart, config, df, path, results
 
 
