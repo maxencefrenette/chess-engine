@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.11.5"
-app = marimo.App(width="medium", auto_download=["html"])
+app = marimo.App(width="medium")
 
 
 @app.cell
@@ -15,7 +15,7 @@ def _(__file__):
     import pandas as pd
     from lightning.pytorch.loggers import CSVLogger
 
-    load_dotenv(Path(__file__).parents[3] / ".env")
+    load_dotenv(Path(__file__).parents[2] / ".env")
     return CSVLogger, Path, load_dotenv, mo, np, pd, train, yaml
 
 
@@ -57,7 +57,7 @@ def _(
             name="steps",
             version=config_name,
         )
-        
+
         with mo.capture_stderr() as _stderr:
             with mo.capture_stdout() as _stdout:
                 metrics = train(config, csv_logger=csv_logger)
@@ -92,7 +92,7 @@ def _(Path, __file__, configs, np, pd):
         if not path.exists():
             print(f"Warning: metrics for config '{config}' not found")
             continue
-        
+
         df = pd.read_csv(path)
         df["config"] = config
         results.append(df)
