@@ -71,7 +71,7 @@ def _(
 def _(mo, np):
     # eyeball fit a scaling law of the form L(C) = C_c / (C ^ alpha_c)
     x1 = 4e9
-    y1 = mo.ui.slider(value=0.792, steps=np.linspace(0.6, 0.9, 301), full_width=True, label="y1")
+    y1 = mo.ui.slider(value=0.796, steps=np.linspace(0.6, 0.9, 301), full_width=True, label="y1")
 
     x2 = 3e10
     y2 = mo.ui.slider(value=0.769, steps=np.linspace(0.6, 0.9, 301), full_width=True, label="y2")
@@ -103,6 +103,7 @@ def _(Path, __file__, alt, configs, math, mo, np, pd, x1, x2, y1, y2):
         lambda x: x.rolling(300, center=True, closed="both").mean()
     )
     df = df.dropna(subset=["train_value_loss"])
+    df = df[df["train_value_loss"] < 0.9]
 
 
     # Calculating power law

@@ -1,10 +1,10 @@
 model:
     hidden_dim: 4
     hidden_layers: 2
-    learning_rate: 0.002
+    learning_rate: 1.0e-3
 
 training:
-    batch_size: 64
-    steps: 5000
+    batch_size: 32
+    steps: 10000
     shuffle_size: 16384
     sample: 16

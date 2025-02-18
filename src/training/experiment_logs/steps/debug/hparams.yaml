@@ -1,7 +1,7 @@
-batch_size: 64
+batch_size: 32
 hidden_dim: 4
 hidden_layers: 2
-learning_rate: 0.002
+learning_rate: 0.001
 sample: 16
 shuffle_size: 16384
-steps: 15000
+steps: 30000

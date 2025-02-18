@@ -9,7 +9,6 @@ import yaml
 from src.training.flops_logger import FlopsLogger
 from typing import Optional
 
-
 def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger] = None) -> dict:
     # Initialize wandb loggerloggers
     if csv_logger is None:
@@ -29,7 +28,7 @@ def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger
     )
     trainer = L.Trainer(
         max_steps=config["training"]["steps"],
-        log_every_n_steps=5,
+        log_every_n_steps=max(1, config["training"]["steps"] // 1000),
         logger=loggers,
         enable_model_summary=not verbose,
         callbacks=[flops_logger],
