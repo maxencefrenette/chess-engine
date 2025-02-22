@@ -50,8 +50,6 @@ def _(
         with open(Path(__file__).parents[1] / f"configs/{config_name}.yaml") as f:
             config = yaml.safe_load(f)
 
-        base_lr = config["learning_rate"]
-
         for i, lr in enumerate(mo.status.progress_bar(learning_rates)):
             config_copy = config.copy()
             config_copy["learning_rate"] = lr
@@ -86,14 +84,14 @@ def _(Path, __file__, configs, mo, pd, yaml):
         for d in path.glob(f"{config}_*"):
             with open(d / "hparams.yaml") as f:
                 hparams = yaml.safe_load(f)
-        
+
             metrics = pd.read_csv(d / "metrics.csv")
             results.append({
                 "config": config,
                 "learning_rate": hparams["learning_rate"],
                 "loss": metrics.iloc[-50]["train_value_loss"].mean()
             })
-        
+
             metrics["config"] = config
             metrics["learning_rate"] = hparams["learning_rate"]
             training_logs.append(metrics)
