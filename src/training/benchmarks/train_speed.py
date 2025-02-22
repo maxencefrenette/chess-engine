@@ -40,10 +40,15 @@ def load_config(config_name: str = "debug") -> dict:
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
 
-def benchmark_model(config: dict, num_batches: int = 100) -> dict:
+def benchmark_model(config: dict, num_batches: int = 100, force_cpu: bool = False) -> dict:
     """
     Benchmark a model configuration using random data.
     Returns statistics about the training speed.
+    
+    Args:
+        config: Model configuration dictionary
+        num_batches: Number of batches to process
+        force_cpu: If True, forces CPU usage regardless of available hardware
     """
     # Time setup
     setup_start = time.time()
@@ -57,7 +62,7 @@ def benchmark_model(config: dict, num_batches: int = 100) -> dict:
     # Create trainer
     trainer = L.Trainer(
         max_steps=num_batches,
-        accelerator="auto",
+        accelerator="cpu" if force_cpu else "auto",
         devices="auto",
         enable_progress_bar=True,
         enable_model_summary=False,
@@ -79,12 +84,14 @@ def benchmark_model(config: dict, num_batches: int = 100) -> dict:
         "total_time": train_time,
         "avg_batch_time": avg_batch_time,
         "throughput": throughput,
-        "total_positions": total_positions
+        "total_positions": total_positions,
+        "accelerator": "cpu" if force_cpu else "auto"
     }
 
 def benchmark_training(num_batches: int = 100):
     """
-    Benchmark the training speed of different model configurations using random data
+    Benchmark the training speed of different model configurations using random data.
+    Tests each configuration with both default accelerator and forced CPU.
     """
     # Benchmark both configurations
     configs = ["debug", "pico"]
@@ -94,18 +101,24 @@ def benchmark_training(num_batches: int = 100):
         print(f"\nBenchmarking {config_name} configuration:")
         print(f"Configuration: {config}")
         
-        try:
-            stats = benchmark_model(config, num_batches)
-            
-            print("\nResults:")
-            print(f"Model setup time: {stats['setup_time']:.2f} seconds")
-            print(f"Total time: {stats['total_time']:.2f} seconds")
-            print(f"Average time per batch: {stats['avg_batch_time']:.4f} seconds")
-            print(f"Throughput: {stats['throughput']:.0f} positions/second")
-            print(f"Total positions processed: {stats['total_positions']}")
-            
-        except Exception as e:
-            print(f"Error during benchmarking: {e}")
+        for force_cpu in [False, True]:
+            mode = "CPU (forced)" if force_cpu else "Default accelerator"
+            print(f"\nTesting with {mode}:")
+            try:
+                stats = benchmark_model(config, num_batches, force_cpu)
+                
+                print("\nResults:")
+                print(f"Accelerator: {stats['accelerator']}")
+                print(f"Model setup time: {stats['setup_time']:.2f} seconds")
+                print(f"Total time: {stats['total_time']:.2f} seconds")
+                print(f"Average time per batch: {stats['avg_batch_time']:.4f} seconds")
+                print(f"Throughput: {stats['throughput']:.0f} positions/second")
+                print(f"Total positions processed: {stats['total_positions']}")
+                print()
+                print()
+                
+            except Exception as e:
+                print(f"Error during benchmarking with {mode}: {e}")
 
 if __name__ == "__main__":
     benchmark_training() 
