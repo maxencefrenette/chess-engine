@@ -8,8 +8,8 @@ class FlopsLogger(L.Callback):
         super().__init__()
 
         with torch.device("meta"):
-            model = Model(config["model"])
-            x = torch.randn(config["training"]["batch_size"], 12 * 8 * 8 + 4)
+            model = Model(config)
+            x = torch.randn(config["batch_size"], 12 * 8 * 8 + 4)
         
         model_fwd = lambda: model.model(x)
         model_loss = lambda y: y.sum()

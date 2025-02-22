@@ -21,14 +21,14 @@ def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger
 
     flops_logger = FlopsLogger(config)
 
-    model = Model(config["model"])
+    model = Model(config)
     dataset = Lc0Data(
-        config=config["training"],
+        config=config,
         file_path=os.getenv("LEELA_DATA_PATH"),
     )
     trainer = L.Trainer(
-        max_steps=config["training"]["steps"],
-        log_every_n_steps=max(1, config["training"]["steps"] // 1000),
+        max_steps=config["steps"],
+        log_every_n_steps=max(1, config["steps"] // 1000),
         logger=loggers,
         enable_model_summary=not verbose,
         callbacks=[flops_logger],

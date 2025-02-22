@@ -50,11 +50,11 @@ def _(
         with open(Path(__file__).parents[1] / f"configs/{config_name}.yaml") as f:
             config = yaml.safe_load(f)
 
-        base_lr = config["model"]["learning_rate"]
+        base_lr = config["learning_rate"]
 
         for i, lr in enumerate(mo.status.progress_bar(learning_rates)):
             config_copy = config.copy()
-            config_copy["model"]["learning_rate"] = lr
+            config_copy["learning_rate"] = lr
 
             csv_logger = CSVLogger(
                 save_dir=Path(__file__).parents[1] / "experiment_logs",

@@ -50,7 +50,7 @@ def _(
     def train_experiment(config_name: str, steps_mult):
         with open(Path(__file__).parents[1] / f"configs/{config_name}.yaml") as f:
             config = yaml.safe_load(f)
-        config["training"]["steps"] *= steps_mult
+        config["steps"] *= steps_mult
 
         csv_logger = CSVLogger(
             save_dir=Path(__file__).parents[1] / "experiment_logs",
