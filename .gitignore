@@ -6,8 +6,7 @@ a0lite.log
 # Training artifacts
 lightning_logs/
 wandb/
-/chess-engine/
-/src/training/experiment_logs/*/*/checkpoints/
+*.ckpt
 
 .env
 
