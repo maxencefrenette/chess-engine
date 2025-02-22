@@ -4,6 +4,7 @@ This is an unfinished toy chess engine that uses deep learning. I don't have a n
 
 ## Project Structure
 
+- `benchmarks/`: Scripts to benchmark the elo of the engine.
 - `docs/`: The documentation.
 - `src/engine/`: The engine code.
 - `src/training/`: The model definition and training pipeline.
