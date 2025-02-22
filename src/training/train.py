@@ -32,6 +32,7 @@ def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger
         logger=loggers,
         enable_model_summary=not verbose,
         callbacks=[flops_logger],
+        accelerator=config["accelerator"],
     )
     
     trainer.fit(model, dataset)
@@ -39,7 +40,7 @@ def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger
     path = Path(os.getenv("MODELS_PATH")) / f"{wandb_logger.experiment.name}.pth"
     trainer.save_checkpoint(path)
 
-    return trainer.logged_metrics, 
+    return trainer.logged_metrics
 
 def train_with_config(config: str):
     load_dotenv()
