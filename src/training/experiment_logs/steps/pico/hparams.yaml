@@ -1,3 +1,4 @@
+accelerator: cpu
 batch_size: 64
 hidden_dim: 16
 hidden_layers: 4
