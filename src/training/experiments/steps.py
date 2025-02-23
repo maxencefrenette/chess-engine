@@ -7,7 +7,7 @@ app = marimo.App(width="medium")
 @app.cell
 def _(__file__):
     import marimo as mo
-    from src.training.train import train
+    from src.training.train import train, load_config
     from pathlib import Path
     from dotenv import load_dotenv
     import yaml
@@ -48,8 +48,7 @@ def _(
     yaml,
 ):
     def train_experiment(config_name: str, steps_mult):
-        with open(Path(__file__).parents[1] / f"configs/{config_name}.yaml") as f:
-            config = yaml.safe_load(f)
+        config = load_config(config_name)
         config["steps"] *= steps_mult
 
         csv_logger = CSVLogger(

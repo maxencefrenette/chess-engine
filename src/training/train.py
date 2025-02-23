@@ -9,6 +9,11 @@ import yaml
 from src.training.flops_logger import FlopsLogger
 from typing import Optional
 
+def load_config(config_name: str):
+    with open(Path(__file__).parent / f"configs/{config_name}.yaml") as f:
+        config = yaml.safe_load(f)
+    return config
+
 def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger] = None) -> dict:
     # Initialize wandb loggerloggers
     if csv_logger is None:
@@ -44,11 +49,7 @@ def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger
 
 def train_with_config(config: str):
     load_dotenv()
-
-    # Load config
-    with open(Path(__file__).parent / f"configs/{config}.yaml") as f:
-        config = yaml.safe_load(f)
-
+    config = load_config(config)
     metrics = train(config, verbose=True)
 
     print("Metrics:")

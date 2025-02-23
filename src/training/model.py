@@ -3,7 +3,6 @@ import torch.nn as nn
 import lightning as L
 from torch import optim
 
-
 class Model(L.LightningModule):
     def __init__(
         self,
