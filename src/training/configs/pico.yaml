@@ -1,11 +1,11 @@
 # model
 hidden_dim: 16
 hidden_layers: 4
-learning_rate: 0.001
+learning_rate: 1.2e-3
 
 # training
 batch_size: 32
-steps: 5000
+steps: 10000
 shuffle_size: 16384
 sample: 16
 accelerator: cpu

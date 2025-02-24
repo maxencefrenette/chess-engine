@@ -3,6 +3,17 @@ import torch.nn as nn
 import lightning as L
 from torch import optim
 
+class ResidualBlock(nn.Module):
+    def __init__(self, hidden_dim):
+        super().__init__()
+        self.ff = nn.Linear(hidden_dim, hidden_dim)
+        self.activation = nn.ReLU()
+    
+    def forward(self, x):
+        out = self.ff(x)
+        out = self.activation(out)
+        return x + out
+
 class Model(L.LightningModule):
     def __init__(
         self,
@@ -19,16 +30,12 @@ class Model(L.LightningModule):
         
         # Model
         self.model = nn.Sequential(
-            nn.Linear(self.input_dim, self.hparams.hidden_dim),
-            nn.ReLU(),
+            nn.Linear(self.input_dim, self.hparams.hidden_dim), # input layer
             *[
-                nn.Sequential(
-                    nn.Linear(self.hparams.hidden_dim, self.hparams.hidden_dim),
-                    nn.ReLU()
-                )
+                ResidualBlock(self.hparams.hidden_dim)
                 for _ in range(self.hparams.hidden_layers)
             ],
-            nn.Linear(self.hparams.hidden_dim, self.output_dim)
+            nn.Linear(self.hparams.hidden_dim, self.output_dim) # output layer
         )
 
     def training_step(self, batch, batch_idx):
