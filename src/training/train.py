@@ -14,7 +14,7 @@ def load_config(config_name: str):
         config = yaml.safe_load(f)
     return config
 
-def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger] = None) -> dict:
+def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger] = None, accumulate_grad_batches: int = 1, extra_callbacks: list[L.Callback] = []) -> dict:
     # Initialize wandb loggerloggers
     if csv_logger is None:
         csv_logger = CSVLogger(save_dir=Path(__file__).parent)
@@ -36,8 +36,9 @@ def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger
         log_every_n_steps=max(1, config["steps"] // 1000),
         logger=loggers,
         enable_model_summary=not verbose,
-        callbacks=[flops_logger],
+        callbacks=[flops_logger] + extra_callbacks,
         accelerator=config["accelerator"],
+        accumulate_grad_batches=accumulate_grad_batches,
     )
     
     trainer.fit(model, dataset)
