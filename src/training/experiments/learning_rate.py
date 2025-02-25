@@ -14,9 +14,10 @@ def _(__file__):
     import numpy as np
     import pandas as pd
     from lightning.pytorch.loggers import CSVLogger
+    from src.training.experiments.utils import read_experiment_results
 
     load_dotenv(Path(__file__).parents[3] / ".env")
-    return CSVLogger, Path, load_dotenv, mo, np, pd, train, yaml
+    return CSVLogger, Path, load_dotenv, mo, np, pd, read_experiment_results, train, yaml
 
 
 @app.cell

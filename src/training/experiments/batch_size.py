@@ -17,6 +17,7 @@ def _(__file__):
     import altair as alt
     import math
     import lightning as L
+    from src.training.experiments.utils import read_experiment_results
 
     load_dotenv(Path(__file__).parents[3] / ".env")
     return (
@@ -30,6 +31,7 @@ def _(__file__):
         mo,
         np,
         pd,
+        read_experiment_results,
         train,
         yaml,
     )
@@ -75,7 +77,7 @@ def _(
         config = load_config(config_name)
         config["steps"] = 2000
         config["batch_size"] = 4
-    
+
         csv_logger = CSVLogger(
             save_dir=Path(__file__).parents[1] / "experiment_logs",
             name="batch_size",
@@ -97,30 +99,10 @@ def _(
 
 
 @app.cell
-def _(Path, __file__, alt, configs, mo, pd, yaml):
-    # Parsing results
-    results = []
-    for config in configs[:1]:
-        path = (
-            Path(__file__).parents[1]
-            / "experiment_logs/batch_size"
-            / config
-        )
-
-        if not path.exists():
-            print(f"Warning: results for config '{config}' not found")
-            continue
-
-        with open(path / "hparams.yaml") as f:
-            hparams = yaml.safe_load(f)
-
-        df = pd.read_csv(path / "metrics.csv")
-        df["config"] = config
-        df["b_small"] = hparams["batch_size"]
-        df["b_big"] = 4 * hparams["batch_size"]
-        results.append(df)
-
-    df = pd.concat(results, ignore_index=True)
+def _(alt, mo, read_experiment_results):
+    df = read_experiment_results("batch_size")
+    df["b_small"] = df["batch_size"]
+    df["b_big"] = 4 * df["batch_size"]
 
     smoothing_window_size = 300
     for i in range(4):
@@ -223,21 +205,10 @@ def _(Path, __file__, alt, configs, mo, pd, yaml):
         chart_b_small,
         chart_g_squared,
         chart_s,
-        config,
         df,
-        f,
-        hparams,
         i,
-        path,
-        results,
         smoothing_window_size,
     )
-
-
-@app.cell
-def _(df):
-    df
-    return
 
 
 if __name__ == "__main__":
