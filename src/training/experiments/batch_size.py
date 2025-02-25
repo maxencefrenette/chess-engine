@@ -17,7 +17,7 @@ def _(__file__):
     import altair as alt
     import math
     import lightning as L
-    from src.training.experiments.utils import read_experiment_results
+    from src.training.experiments.utils import read_experiment_results, smooth_column
 
     load_dotenv(Path(__file__).parents[3] / ".env")
     return (
@@ -32,6 +32,7 @@ def _(__file__):
         np,
         pd,
         read_experiment_results,
+        smooth_column,
         train,
         yaml,
     )
@@ -106,9 +107,7 @@ def _(alt, mo, read_experiment_results):
 
     smoothing_window_size = 300
     for i in range(4):
-        df[f"grad_norm_{i}"] = df.groupby("config")[f"grad_norm_{i}"].transform(
-            lambda x: x.rolling(smoothing_window_size, center=True, closed="both").mean()
-        )
+        df = smooth_column(df, f"grad_norm_{i}", window_size=smoothing_window_size)
 
     df["|G_B_small|"] = df["grad_norm_0"]
     df["|G_B_big|"] = df["grad_norm_3"] / 4
@@ -119,12 +118,8 @@ def _(alt, mo, read_experiment_results):
     df["S"] = 1 / (1/df["b_small"] - 1/df["b_big"]) * (df["|G_B_small|"]**2 - df["|G_B_big|"]**2)
 
     # smooth out values
-    df[f"|G|^2"] = df.groupby("config")[f"|G|^2"].transform(
-        lambda x: x.rolling(100, center=True, closed="both").mean()
-    )
-    df[f"S"] = df.groupby("config")[f"|G|^2"].transform(
-        lambda x: x.rolling(100, center=True, closed="both").mean()
-    )
+    df = smooth_column(df, "|G|^2", window_size=100)
+    df = smooth_column(df, "S", window_size=100)
 
     df["b_simple"] = df["S"] / df["|G|^2"]
 

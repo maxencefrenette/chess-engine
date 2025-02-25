@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.11.5"
+__generated_with = "0.11.8"
 app = marimo.App(width="medium")
 
 
@@ -14,10 +14,22 @@ def _(__file__):
     import numpy as np
     import pandas as pd
     from lightning.pytorch.loggers import CSVLogger
-    from src.training.experiments.utils import read_experiment_results
+    from src.training.experiments.utils import read_experiment_results, smooth_column
 
     load_dotenv(Path(__file__).parents[3] / ".env")
-    return CSVLogger, Path, load_dotenv, mo, np, pd, read_experiment_results, train, yaml
+    return (
+        CSVLogger,
+        Path,
+        load_config,
+        load_dotenv,
+        mo,
+        np,
+        pd,
+        read_experiment_results,
+        smooth_column,
+        train,
+        yaml,
+    )
 
 
 @app.cell
@@ -42,10 +54,10 @@ def _(
     __file__,
     configs,
     dictionnary,
+    load_config,
     mo,
     run_button,
     train,
-    yaml,
 ):
     def train_experiment(config_name: str, learning_rates: list[float]):
         config = load_config(config_name)
@@ -131,10 +143,9 @@ def _(Path, __file__, configs, mo, pd, yaml):
 
 
 @app.cell
-def _(alt, mo, pd, training_logs):
+def _(alt, mo, pd, smooth_column, training_logs):
     df2 = pd.concat(training_logs, ignore_index=True)
-    df2["train_value_loss"] = df2.groupby(["config", "learning_rate"])["train_value_loss"] \
-        .transform(lambda x: x.rolling(50, center=True, closed="both").mean())
+    df2 = smooth_column(df2, "train_value_loss", window_size=50, group_by=["config", "learning_rate"])
     df2 = df2.dropna(subset=["train_value_loss"])
 
     def make_loss_chart(df, config_name: str):

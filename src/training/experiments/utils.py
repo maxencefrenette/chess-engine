@@ -61,3 +61,23 @@ def read_experiment_results(experiment_name: str) -> pd.DataFrame:
     results_df = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
     
     return results_df
+
+
+def smooth_column(df: pd.DataFrame, column_name: str, window_size: int = 300, group_by: str = "config") -> pd.DataFrame:
+    """
+    Apply rolling mean smoothing to a column in a dataframe.
+    
+    Args:
+        df: DataFrame containing the data
+        column_name: Name of the column to smooth
+        window_size: Size of the rolling window
+        group_by: Column name to group by before smoothing
+        
+    Returns:
+        DataFrame with the smoothed column
+    """
+    df_copy = df.copy()
+    df_copy[column_name] = df_copy.groupby(group_by)[column_name].transform(
+        lambda x: x.rolling(window_size, center=True, closed="both").mean()
+    )
+    return df_copy

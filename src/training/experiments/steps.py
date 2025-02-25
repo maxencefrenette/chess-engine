@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.11.5"
+__generated_with = "0.11.8"
 app = marimo.App(width="medium")
 
 
@@ -16,9 +16,23 @@ def _(__file__):
     from lightning.pytorch.loggers import CSVLogger
     import altair as alt
     import math
+    from src.training.experiments.utils import smooth_column
 
     load_dotenv(Path(__file__).parents[3] / ".env")
-    return CSVLogger, Path, alt, load_dotenv, math, mo, np, pd, train, yaml
+    return (
+        CSVLogger,
+        Path,
+        alt,
+        load_config,
+        load_dotenv,
+        math,
+        mo,
+        np,
+        pd,
+        smooth_column,
+        train,
+        yaml,
+    )
 
 
 @app.cell
@@ -43,9 +57,9 @@ def _(
     __file__,
     configs,
     dictionnary,
+    load_config,
     run_button,
     train,
-    yaml,
 ):
     def train_experiment(config_name: str, steps_mult):
         config = load_config(config_name)
@@ -78,7 +92,21 @@ def _(mo, np):
 
 
 @app.cell
-def _(Path, __file__, alt, configs, math, mo, np, pd, x1, x2, y1, y2):
+def _(
+    Path,
+    __file__,
+    alt,
+    configs,
+    math,
+    mo,
+    np,
+    pd,
+    smooth_column,
+    x1,
+    x2,
+    y1,
+    y2,
+):
     # Parsing results
     results = []
     for config in configs.keys():
@@ -98,9 +126,7 @@ def _(Path, __file__, alt, configs, math, mo, np, pd, x1, x2, y1, y2):
         results.append(df)
 
     df = pd.concat(results, ignore_index=True)
-    df["train_value_loss"] = df.groupby("config")["train_value_loss"].transform(
-        lambda x: x.rolling(300, center=True, closed="both").mean()
-    )
+    df = smooth_column(df, "train_value_loss", window_size=300)
     df = df.dropna(subset=["train_value_loss"])
     df = df[df["train_value_loss"] < 0.9]
 
