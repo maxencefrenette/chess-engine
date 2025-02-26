@@ -38,8 +38,9 @@ def _(__file__):
 @app.cell
 def _(mo):
     configs = {
-        "debug": 3,
-        "pico": 2,
+        "debug": 5,
+        "pico": 5,
+        "nano": 3,
     }
 
     checkboxes = {config: mo.ui.checkbox() for config in configs.keys()}
