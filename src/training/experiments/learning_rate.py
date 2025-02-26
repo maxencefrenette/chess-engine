@@ -84,35 +84,24 @@ def _(
 
 
 @app.cell
-def _(Path, __file__, configs, mo, pd, yaml):
+def _(mo, read_experiment_results):
     import altair as alt
 
-    config = "debug"
-    path = Path(__file__).parents[1] / "experiment_logs/learning_rate"
-    results = []
-    training_logs = []
+    # Read all experiment results
+    df = read_experiment_results("learning_rate")
 
-    for config in configs.keys():
-        for d in path.glob(f"{config}_*"):
-            with open(d / "hparams.yaml") as f:
-                hparams = yaml.safe_load(f)
+    # Group by config and learning_rate, calculate mean of last 50 steps or all available
+    df_learning_rates = (
+        df
+            .groupby(["config", "learning_rate"])
+            .agg({ "train_value_loss": lambda x: x.tail(50).mean() })
+            #.apply(lambda x: x.tail(50)["train_value_loss"].mean())
+            .reset_index()
+    )
 
-            metrics = pd.read_csv(d / "metrics.csv")
-            results.append({
-                "config": config,
-                "learning_rate": hparams["learning_rate"],
-                "loss": metrics.iloc[-50]["train_value_loss"].mean()
-            })
-
-            metrics["config"] = config
-            metrics["learning_rate"] = hparams["learning_rate"]
-            training_logs.append(metrics)
-
-    df = pd.DataFrame(results)
-
-    chart = alt.Chart(df).mark_point().encode(
+    chart = alt.Chart(df_learning_rates).mark_point().encode(
         x=alt.X("learning_rate").scale(type="log", nice=False),
-        y=alt.Y("loss").scale(zero=False, padding=20),
+        y=alt.Y("train_value_loss").scale(zero=False, domainMax=1.05, padding=20),
         color="config"
     ).properties(
         height=500
@@ -120,38 +109,23 @@ def _(Path, __file__, configs, mo, pd, yaml):
 
     loess = chart.transform_loess(
         "learning_rate",
-        "loss",
+        "train_value_loss",
         groupby=["config"],
         bandwidth=0.3
     ).mark_line()
 
     mo.ui.altair_chart(chart + loess)
-    return (
-        alt,
-        chart,
-        config,
-        d,
-        df,
-        f,
-        hparams,
-        loess,
-        metrics,
-        path,
-        results,
-        training_logs,
-    )
+    return alt, chart, df, df_learning_rates, loess
 
 
 @app.cell
-def _(alt, mo, pd, smooth_column, training_logs):
-    df2 = pd.concat(training_logs, ignore_index=True)
-    df2 = smooth_column(df2, "train_value_loss", window_size=50, group_by=["config", "learning_rate"])
-    df2 = df2.dropna(subset=["train_value_loss"])
+def _(alt, df, mo, smooth_column):
+    df2 = smooth_column(df, "train_value_loss", window_size=50, group_by=["config", "learning_rate"])
 
     def make_loss_chart(df, config_name: str):
         return alt.Chart(df[df["config"] == config_name]).mark_line().encode(
             x=alt.X("step").scale(zero=False, nice=False),
-            y=alt.Y("train_value_loss").scale(zero=False),
+            y=alt.Y("train_value_loss").scale(zero=False, domain=(0.7, 1.15)),
             color=alt.Color("learning_rate:Q").scale(type="log", scheme="viridis"),
             tooltip=["learning_rate"]
         ).properties(

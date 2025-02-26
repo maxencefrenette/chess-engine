@@ -16,7 +16,7 @@ def _(__file__):
     from lightning.pytorch.loggers import CSVLogger
     import altair as alt
     import math
-    from src.training.experiments.utils import smooth_column
+    from src.training.experiments.utils import read_experiment_results, smooth_column
 
     load_dotenv(Path(__file__).parents[3] / ".env")
     return (
@@ -29,6 +29,7 @@ def _(__file__):
         mo,
         np,
         pd,
+        read_experiment_results,
         smooth_column,
         train,
         yaml,
@@ -94,39 +95,23 @@ def _(mo, np):
 
 @app.cell
 def _(
-    Path,
-    __file__,
     alt,
     configs,
     math,
     mo,
     np,
     pd,
+    read_experiment_results,
     smooth_column,
     x1,
     x2,
     y1,
     y2,
 ):
-    # Parsing results
-    results = []
-    for config in configs.keys():
-        path = (
-            Path(__file__).parents[1]
-            / "experiment_logs/steps"
-            / config
-            / "metrics.csv"
-        )
-
-        if not path.exists():
-            print(f"Warning: metrics for config '{config}' not found")
-            continue
-
-        df = pd.read_csv(path)
-        df["config"] = config
-        results.append(df)
-
-    df = pd.concat(results, ignore_index=True)
+    # Parsing results using read_experiment_results
+    df = read_experiment_results("steps")
+    
+    # Apply smoothing and filtering
     df = smooth_column(df, "train_value_loss", window_size=300)
     df = df.dropna(subset=["train_value_loss"])
     df = df[df["train_value_loss"] < 0.9]
@@ -214,9 +199,7 @@ def _(
         df_regression,
         flops,
         loss,
-        path,
         power_function_params,
-        results,
     )
 
 
