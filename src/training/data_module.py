@@ -3,12 +3,14 @@ import warnings
 import torch
 import lightning as L
 from src.training.lc0.chunkparser import ChunkParser
+from typing import Optional
 
 
 class Lc0Data(L.LightningDataModule):
-    def __init__(self, config: dict, file_path: str):
+    def __init__(self, config: dict, file_path: str, workers: Optional[int] = None):
         super().__init__()
         self.file_path = file_path
+        self.workers = workers
         self.save_hyperparameters(config)
 
     def prepare_data(self):
@@ -25,6 +27,7 @@ class Lc0Data(L.LightningDataModule):
             shuffle_size=self.hparams.shuffle_size,
             sample=self.hparams.sample,
             batch_size=self.hparams.batch_size,
+            workers=self.workers,
         )
 
     def train_dataloader(self):

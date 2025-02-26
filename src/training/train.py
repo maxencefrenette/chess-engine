@@ -14,7 +14,7 @@ def load_config(config_name: str):
         config = yaml.safe_load(f)
     return config
 
-def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger] = None, accumulate_grad_batches: int = 1, extra_callbacks: list[L.Callback] = []) -> dict:
+def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger] = None, accumulate_grad_batches: int = 1, extra_callbacks: list[L.Callback] = [], single_thread: bool = False) -> dict:
     # Initialize wandb loggerloggers
     if csv_logger is None:
         csv_logger = CSVLogger(save_dir=Path(__file__).parent)
@@ -30,6 +30,7 @@ def train(config: dict, *, verbose: bool = False, csv_logger: Optional[CSVLogger
     dataset = Lc0Data(
         config=config,
         file_path=os.getenv("LEELA_DATA_PATH"),
+        workers=0 if single_thread else None,
     )
     trainer = L.Trainer(
         max_steps=config["steps"],
