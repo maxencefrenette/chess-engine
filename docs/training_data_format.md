@@ -17,24 +17,27 @@ Each `.npz` file contains the following arrays:
 
 | Array Name | Shape | Description |
 |------------|-------|-------------|
-| `features` | `(N, 772)` | Board position features, where N is the number of positions |
+| `features` | `(N, 780)` | Board position features, where N is the number of positions |
 | `best_q` | `(N, 3)` | Win-Draw-Loss probabilities for each position |
 
 ### Features Format
 
 The features array uses the same format as our model input, with dimensions:
 
-- 12 piece planes (6 piece types � 2 colors) in 8�8 board positions (768 features)
+- 12 piece planes (6 piece types × 2 colors) in 8×8 board positions (768 features)
 - 4 castling rights (kingside/queenside for both sides) (4 features)
+- 8 en passant possible files (one-hot encoded, indicating which file has en passant available) (8 features)
 
-Total: 772 features per position
+Total: 780 features per position
+
+Note: En passant information is calculated by comparing consecutive positions in the game to detect double pawn moves.
 
 For efficient storage, the features are stored in a packed bit format where:
 
 - `1` indicates the presence of a piece or castling right
 - `0` indicates the absence of a piece or castling right
 
-The board is always viewed from the perspective of the side to move. When it's Black's turn, the board is rotated 180 degrees.
+The board is always viewed from the perspective of the side to move. When it's Black's turn, the board is mirrored vertically.
 
 ### Best Q Format
 

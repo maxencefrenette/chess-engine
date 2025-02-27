@@ -56,6 +56,10 @@ class LeelaChunkParser:
         self.flat_planes = []
         for i in range(2):
             self.flat_planes.append((np.zeros(64, dtype=np.float32) + i).tobytes())
+        
+        # Store the previous position's pawn locations to detect en passant
+        self.prev_white_pawns = np.zeros((8, 8), dtype=np.float32)
+        self.prev_black_pawns = np.zeros((8, 8), dtype=np.float32)
 
     def _reverse_expand_bits(self, plane: int) -> bytes:
         """Reverse and expand a byte into bits."""
@@ -151,13 +155,56 @@ class LeelaChunkParser:
         # Get castling rights directly from the record
         castling_rights = np.array([us_oo, us_ooo, them_oo, them_ooo], dtype=np.float32)
         
+        # Extract current pawn positions
+        # In LC0 format, pawns are at index 0 (white) and 6 (black)
+        white_pawns = board_planes[0]  # White pawns
+        black_pawns = board_planes[6]  # Black pawns
+        
+        # Detect en passant by comparing with previous position
+        # The side to move now is the opposite of the previous position
+        is_white_turn = stm == 0
+        enpassant = np.zeros(8, dtype=np.float32)  # One-hot vector for en passant file
+        
+        if is_white_turn:
+            # Black just moved, check if a black pawn moved two squares
+            # Black pawn moved from rank 6 to rank 4
+            for file in range(8):
+                # Check if there's a black pawn at rank 4 (index 4)
+                if black_pawns[4, file] == 1:
+                    # Check if there was a black pawn at rank 6 (index 6) in the previous position
+                    if self.prev_black_pawns[6, file] == 1:
+                        # And no black pawn at rank 5 (index 5) in the previous position
+                        if self.prev_black_pawns[5, file] == 0:
+                            # And no black pawn at rank 4 (index 4) in the previous position
+                            if self.prev_black_pawns[4, file] == 0:
+                                # En passant is possible on this file
+                                enpassant[file] = 1.0
+        else:
+            # White just moved, check if a white pawn moved two squares
+            # White pawn moved from rank 1 to rank 3
+            for file in range(8):
+                # Check if there's a white pawn at rank 3 (index 3)
+                if white_pawns[3, file] == 1:
+                    # Check if there was a white pawn at rank 1 (index 1) in the previous position
+                    if self.prev_white_pawns[1, file] == 1:
+                        # And no white pawn at rank 2 (index 2) in the previous position
+                        if self.prev_white_pawns[2, file] == 0:
+                            # And no white pawn at rank 3 (index 3) in the previous position
+                            if self.prev_white_pawns[3, file] == 0:
+                                # En passant is possible on this file
+                                enpassant[file] = 1.0
+        
+        # Store current pawn positions for next comparison
+        self.prev_white_pawns = white_pawns.copy()
+        self.prev_black_pawns = black_pawns.copy()
+        
         # Parse best_q (Win-Draw-Loss probabilities)
         best_q_w = 0.5 * (1.0 - best_d + best_q)
         best_q_l = 0.5 * (1.0 - best_d - best_q)
         best_q_array = np.array([best_q_w, best_d, best_q_l], dtype=np.float32)
         
-        # Create feature vector (board planes flattened + castling rights)
-        features = np.concatenate([board_planes.flatten(), castling_rights])
+        # Create feature vector (board planes flattened + castling rights + en passant)
+        features = np.concatenate([board_planes.flatten(), castling_rights, enpassant])
         
         return features, best_q_array
 

@@ -35,6 +35,8 @@ engine = "src.engine.engine:main"
 train_debug = "src.training.train:main_debug"
 train_pico = "src.training.train:main_pico"
 lc0_to_npz = "src.preprocessing.lc0_to_npz:main"
+lc0_explorer = "src.preprocessing.lc0_data_explorer:main"
+npz_explorer = "src.preprocessing.npz_explorer:main"
 
 
 [tool.hatch.build.targets.wheel]
