@@ -8,12 +8,13 @@ It helps in verifying that our data parsing is correct.
 """
 
 import argparse
-import struct
 import gzip
-import numpy as np
-import chess
+import struct
 from pathlib import Path
-from typing import Tuple, List, Optional
+from typing import List, Optional, Tuple
+
+import chess
+import numpy as np
 
 # Import our chunk parser from the conversion script
 from src.preprocessing.lc0_to_npz import LeelaChunkParser

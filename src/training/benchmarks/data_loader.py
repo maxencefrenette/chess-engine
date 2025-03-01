@@ -1,9 +1,12 @@
-import time
 import os
+import time
 from pathlib import Path
-from dotenv import load_dotenv
-from src.training.data_module import Lc0Data
+
 import torch
+from dotenv import load_dotenv
+
+from src.training.data_module import Lc0Data
+
 
 def benchmark_data_loading(num_batches: int = 100):
     """

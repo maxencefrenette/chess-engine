@@ -58,15 +58,17 @@ interpretable data in the convert_vX_to_tuple() method and finally sent on
 to tensorflow in training batches by the batch_gen() method.
 """
 
+import gzip
 import itertools
 import multiprocessing as mp
-import numpy as np
 import random
-import src.training.lc0.shufflebuffer as sb
 import struct
 import unittest
-import gzip
 from select import select
+
+import numpy as np
+
+import src.training.lc0.shufflebuffer as sb
 
 V6_VERSION = struct.pack("i", 6)
 V5_VERSION = struct.pack("i", 5)

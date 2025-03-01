@@ -1,8 +1,10 @@
-import numpy as np
 import math
-import chess
 from collections import OrderedDict
 from time import time
+
+import chess
+import numpy as np
+
 from .util import cp
 
 FPU = -1.0

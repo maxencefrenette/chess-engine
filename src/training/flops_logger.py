@@ -1,7 +1,9 @@
-import torch
 import lightning as L
+import torch
 from lightning.pytorch.utilities import measure_flops
+
 from src.training.model import Model
+
 
 class FlopsLogger(L.Callback):
     def __init__(self, config):

@@ -1,7 +1,9 @@
-import chess
-from src.training.model import Model
 from pathlib import Path
+
+import chess
 import torch
+
+from src.training.model import Model
 
 
 def board_to_features(board: chess.Board) -> torch.Tensor:  # [772]

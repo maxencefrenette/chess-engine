@@ -1,13 +1,16 @@
-from src.training.model import Model
-from src.training.data_module import Lc0Data
-import lightning as L
-from lightning.pytorch.loggers import WandbLogger, CSVLogger
 import os
-from dotenv import load_dotenv
 from pathlib import Path
-import yaml
-from src.training.flops_logger import FlopsLogger
 from typing import Optional
+
+import lightning as L
+import yaml
+from dotenv import load_dotenv
+from lightning.pytorch.loggers import CSVLogger, WandbLogger
+
+from src.training.data_module import Lc0Data
+from src.training.flops_logger import FlopsLogger
+from src.training.model import Model
+
 
 def load_config(config_name: str):
     with open(Path(__file__).parent / f"configs/{config_name}.yaml") as f:

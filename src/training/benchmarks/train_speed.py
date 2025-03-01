@@ -1,12 +1,15 @@
 import time
+from pathlib import Path
+from typing import Tuple
+
+import lightning as L
 import torch
 import torch.nn as nn
 import yaml
-import lightning as L
-from pathlib import Path
+from torch.utils.data import DataLoader, Dataset
+
 from src.training.model import Model
-from torch.utils.data import Dataset, DataLoader
-from typing import Tuple
+
 
 class RandomDataset(Dataset):
     """Dataset that generates random chess positions"""

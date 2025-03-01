@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import pandas as pd
 import yaml
-from pathlib import Path
 
 
 def read_experiment_results(experiment_name: str) -> pd.DataFrame:

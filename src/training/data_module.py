@@ -1,9 +1,11 @@
-from glob import glob
 import warnings
-import torch
-import lightning as L
-from src.training.lc0.chunkparser import ChunkParser
+from glob import glob
 from typing import Optional
+
+import lightning as L
+import torch
+
+from src.training.lc0.chunkparser import ChunkParser
 
 
 class Lc0Data(L.LightningDataModule):

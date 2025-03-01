@@ -1,11 +1,13 @@
-import src.engine.search as search
-import chess
-import chess.pgn
+import os
 import sys
 import traceback
 from pathlib import Path
-import os
+
+import chess
+import chess.pgn
 from dotenv import load_dotenv
+
+import src.engine.search as search
 
 load_dotenv()
 

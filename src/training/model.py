@@ -1,7 +1,8 @@
+import lightning as L
 import torch
 import torch.nn as nn
-import lightning as L
 from torch import optim
+
 
 class ResidualBlock(nn.Module):
     def __init__(self, hidden_dim):

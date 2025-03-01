@@ -8,10 +8,11 @@ calculated en passant features.
 """
 
 import argparse
-import numpy as np
-import chess
 from pathlib import Path
 from typing import List, Optional
+
+import chess
+import numpy as np
 
 
 def create_board_from_features(

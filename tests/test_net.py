@@ -1,6 +1,7 @@
-from src.engine.search.trivial_net import board_to_features
 import chess
 import torch
+
+from src.engine.search.trivial_net import board_to_features
 
 
 def test_board_to_features():

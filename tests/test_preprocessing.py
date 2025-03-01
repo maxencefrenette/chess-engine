@@ -1,9 +1,10 @@
 import os
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+
 import numpy as np
 import pytest
-from pathlib import Path
 
 from src.preprocessing.lc0_to_npz import process_tar_archive
 

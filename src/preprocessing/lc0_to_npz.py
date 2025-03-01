@@ -7,16 +7,17 @@ extracts the relevant features and labels, and saves them in the more efficient 
 as described in docs/training_data_format.md.
 """
 
-import os
 import argparse
-import struct
 import gzip
-import tarfile
 import io
-import numpy as np
+import os
+import struct
+import tarfile
 from pathlib import Path
+from typing import BinaryIO, Dict, Generator, List, Optional, Tuple, Union
+
+import numpy as np
 from tqdm import tqdm
-from typing import Tuple, Optional, Generator, List, Dict, BinaryIO, Union
 
 # Define constants for LC0 chunk format
 V6_VERSION = struct.pack("i", 6)

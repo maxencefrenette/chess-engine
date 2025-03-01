@@ -6,18 +6,20 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _(__file__):
-    import marimo as mo
-    from src.training.train import train, load_config
+    import math
     from pathlib import Path
-    from dotenv import load_dotenv
-    import yaml
+
+    import altair as alt
+    import lightning as L
+    import marimo as mo
     import numpy as np
     import pandas as pd
+    import yaml
+    from dotenv import load_dotenv
     from lightning.pytorch.loggers import CSVLogger
-    import altair as alt
-    import math
-    import lightning as L
+
     from src.training.experiments.utils import read_experiment_results, smooth_column
+    from src.training.train import load_config, train
 
     load_dotenv(Path(__file__).parents[3] / ".env")
     return (
