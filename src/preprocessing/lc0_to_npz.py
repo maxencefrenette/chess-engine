@@ -9,12 +9,11 @@ as described in docs/training_data_format.md.
 
 import argparse
 import gzip
-import io
 import os
 import struct
 import tarfile
 from pathlib import Path
-from typing import BinaryIO, Dict, Generator, List, Optional, Tuple, Union
+from typing import BinaryIO, Tuple
 
 import numpy as np
 from tqdm import tqdm
