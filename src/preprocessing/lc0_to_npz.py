@@ -365,20 +365,48 @@ def process_tar_archive(tar_path: str, output_dir: Path) -> None:
             )
 
 
+def process_tar_archives(input_pattern: str, output_dir: Path) -> None:
+    """
+    Process multiple tar archives matching a glob pattern.
+
+    Args:
+        input_pattern: Glob pattern to match tar archives (e.g., "/path/to/data/*.tar")
+        output_dir: Directory to save the combined NPZ files
+    """
+    # Create output directory if it doesn't exist
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Get all matching tar files
+    import glob
+
+    tar_files = glob.glob(input_pattern)
+
+    if not tar_files:
+        print(f"No tar files found matching pattern: {input_pattern}")
+        return
+
+    print(f"Found {len(tar_files)} tar files to process")
+
+    # Process each tar file sequentially
+    for tar_path in tqdm(tar_files, desc="Processing tar archives"):
+        print(f"\nProcessing {tar_path}...")
+        process_tar_archive(tar_path=tar_path, output_dir=output_dir)
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert LC0 training data from a tar archive to NPZ format"
+        description="Convert LC0 training data from .tar archives to NPZ format"
     )
     parser.add_argument(
         "input",
-        help='Path to the tar archive containing .gz files (e.g., "/path/to/data.tar")',
+        help='Glob pattern matching tar archives (e.g., "/path/to/data/*.tar")',
     )
     parser.add_argument("output", help="Output directory for NPZ files")
     args = parser.parse_args()
 
     output_dir = Path(args.output)
 
-    process_tar_archive(tar_path=args.input, output_dir=output_dir)
+    process_tar_archives(input_pattern=args.input, output_dir=output_dir)
 
 
 if __name__ == "__main__":
