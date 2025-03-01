@@ -1,6 +1,14 @@
 # Chess Engine Development Guidelines
 
+## Directory structure
+- `tests/` Unit and integration tests
+- `src/`
+  - `preprocessing/` Script to convert LC0 files to NumPy `.npz` files
+  - `engine/` Engine implementation
+  - `training/` Model definition and training scripts
+
 ## Commands
+- **Preprocessing**: `uv run lc0_to_npz /path/to/data/*.gz output_dir/`
 - **Run engine**: `uv run engine`
 - **Training**:
   - Debug model: `uv run train_debug`
