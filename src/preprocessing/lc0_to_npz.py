@@ -12,11 +12,10 @@ import glob
 import struct
 import gzip
 import numpy as np
-import torch
 from pathlib import Path
 import multiprocessing as mp
 from tqdm import tqdm
-from typing import Tuple, List, Dict, Optional, Generator, Any
+from typing import Tuple, Optional, Generator
 
 # Define constants for LC0 chunk format
 V6_VERSION = struct.pack("i", 6)
@@ -48,9 +47,6 @@ class LeelaChunkParser:
         
         # Initialize struct parsers
         self.v6_struct = struct.Struct(V6_STRUCT_STRING)
-        self.v5_struct = struct.Struct(V5_STRUCT_STRING)
-        self.v4_struct = struct.Struct(V4_STRUCT_STRING)
-        self.v3_struct = struct.Struct(V3_STRUCT_STRING)
         
         # Flat planes for common board representations
         self.flat_planes = []
