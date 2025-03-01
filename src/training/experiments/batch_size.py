@@ -71,10 +71,11 @@ def _(
                 if p.grad is not None:
                     param_norm = p.grad.data.norm(2)
                     total_norm += param_norm.item() ** 2
-            total_norm = total_norm ** 0.5
+            total_norm = total_norm**0.5
             # Log the aggregated gradient norm for the current step
-            pl_module.log(f"grad_norm_{batch_idx % 4}", total_norm, on_step=True, on_epoch=False)
-
+            pl_module.log(
+                f"grad_norm_{batch_idx % 4}", total_norm, on_step=True, on_epoch=False
+            )
 
     def train_experiment(config_name: str):
         config = load_config(config_name)
@@ -91,7 +92,7 @@ def _(
             config,
             csv_logger=csv_logger,
             accumulate_grad_batches=4,
-            extra_callbacks=[GradientLoggingCallback()]
+            extra_callbacks=[GradientLoggingCallback()],
         )
 
     if run_button.value:
@@ -114,10 +115,15 @@ def _(alt, mo, read_experiment_results):
     df["|G_B_small|"] = df["grad_norm_0"]
     df["|G_B_big|"] = df["grad_norm_3"] / 4
     df["|G|^2"] = (
-        1 / (df["b_big"] - df["b_small"])
-        * (df["b_big"] * df["|G_B_big|"]**2 - df["b_small"] * df["|G_B_small|"]**2)
+        1
+        / (df["b_big"] - df["b_small"])
+        * (df["b_big"] * df["|G_B_big|"] ** 2 - df["b_small"] * df["|G_B_small|"] ** 2)
     )
-    df["S"] = 1 / (1/df["b_small"] - 1/df["b_big"]) * (df["|G_B_small|"]**2 - df["|G_B_big|"]**2)
+    df["S"] = (
+        1
+        / (1 / df["b_small"] - 1 / df["b_big"])
+        * (df["|G_B_small|"] ** 2 - df["|G_B_big|"] ** 2)
+    )
 
     # smooth out values
     df = smooth_column(df, "|G|^2", window_size=100)
@@ -130,10 +136,8 @@ def _(alt, mo, read_experiment_results):
         alt.Chart(df)
         .mark_line()
         .encode(
-            x=alt.X("step")
-                .axis(grid=False),
-            y=alt.Y("grad_norm_0")
-                .axis(grid=False),
+            x=alt.X("step").axis(grid=False),
+            y=alt.Y("grad_norm_0").axis(grid=False),
             color="config",
         )
         .properties(width=250, height=250)
@@ -143,10 +147,8 @@ def _(alt, mo, read_experiment_results):
         alt.Chart(df)
         .mark_line()
         .encode(
-            x=alt.X("step")
-                .axis(grid=False),
-            y=alt.Y("grad_norm_3")
-                .axis(grid=False),
+            x=alt.X("step").axis(grid=False),
+            y=alt.Y("grad_norm_3").axis(grid=False),
             color="config",
         )
         .properties(width=250, height=250)
@@ -156,10 +158,8 @@ def _(alt, mo, read_experiment_results):
         alt.Chart(df)
         .mark_line()
         .encode(
-            x=alt.X("step")
-                .axis(grid=False),
-            y=alt.Y("|G|^2")
-                .axis(grid=False),
+            x=alt.X("step").axis(grid=False),
+            y=alt.Y("|G|^2").axis(grid=False),
             color="config",
         )
         .properties(width=250, height=250)
@@ -169,10 +169,8 @@ def _(alt, mo, read_experiment_results):
         alt.Chart(df)
         .mark_line()
         .encode(
-            x=alt.X("step")
-                .axis(grid=False),
-            y=alt.Y("S")
-                .axis(grid=False),
+            x=alt.X("step").axis(grid=False),
+            y=alt.Y("S").axis(grid=False),
             color="config",
         )
         .properties(width=250, height=250)
@@ -182,20 +180,20 @@ def _(alt, mo, read_experiment_results):
         alt.Chart(df)
         .mark_line()
         .encode(
-            x=alt.X("step")
-                .axis(grid=False),
-            y=alt.Y("b_simple")
-                .axis(grid=False),
+            x=alt.X("step").axis(grid=False),
+            y=alt.Y("b_simple").axis(grid=False),
             color="config",
         )
         .properties(width=500, height=500)
     )
 
-    mo.vstack([
-        mo.hstack([chart_b_small, chart_b_big]),
-        mo.hstack([chart_g_squared, chart_s]),
-        chart_b_simple,
-    ])
+    mo.vstack(
+        [
+            mo.hstack([chart_b_small, chart_b_big]),
+            mo.hstack([chart_g_squared, chart_s]),
+            chart_b_simple,
+        ]
+    )
     return (
         chart_b_big,
         chart_b_simple,

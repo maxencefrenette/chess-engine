@@ -20,22 +20,22 @@
 General comments on how chunkparser works.
 
 A "training record" or just "record" is a fixed-length packed byte array. Typically
-records are generated during training and are stored together by game, one record for 
+records are generated during training and are stored together by game, one record for
 each position in the game, but this arrangement is not required.
-Over dev time additional fields have been added to the training record, most of which 
-just put additional information after the end of the byte array used in the previous 
+Over dev time additional fields have been added to the training record, most of which
+just put additional information after the end of the byte array used in the previous
 version. Currently supported training record versions are V3, V4, V5, and V6.
 
 shufflebuffer.ShuffleBuffer is a simple structure holding an array of training
 records that are efficiently randomized and replaced as needed. All records in
-ShuffleBuffer are adjusted to be the same number of bytes by appending unused 
-bytes *before* being put in the shuffler. 
+ShuffleBuffer are adjusted to be the same number of bytes by appending unused
+bytes *before* being put in the shuffler.
 byte padding is done in chunkparser.ChunkParser.sample_record()
 sample_record() also skips most training records to avoid sampling over-correlated
 positions since they typically are from sequential positions in a game.
 
 Current implementation of "diff focus" also is in sample_record() and works by
-probabilistically skipping records according to how accurate the no-search 
+probabilistically skipping records according to how accurate the no-search
 eval ('orig_q') is compared to eval after search ('best_q') as well as the
 recorded policy_kld (a measure of difference between no search policy and the
 final policy distribution). It does not use draw values at this point. Putting

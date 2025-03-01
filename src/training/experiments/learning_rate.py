@@ -94,26 +94,26 @@ def _(mo, read_experiment_results):
 
     # Group by config and learning_rate, calculate mean of last 50 steps or all available
     df_learning_rates = (
-        df
-            .groupby(["config", "learning_rate"])
-            .agg({ "train_value_loss": lambda x: x.tail(50).mean() })
-            #.apply(lambda x: x.tail(50)["train_value_loss"].mean())
-            .reset_index()
+        df.groupby(["config", "learning_rate"]).agg(
+            {"train_value_loss": lambda x: x.tail(50).mean()}
+        )
+        # .apply(lambda x: x.tail(50)["train_value_loss"].mean())
+        .reset_index()
     )
 
-    chart = alt.Chart(df_learning_rates).mark_point().encode(
-        x=alt.X("learning_rate").scale(type="log", nice=False),
-        y=alt.Y("train_value_loss").scale(zero=False, domainMax=1.05, padding=20),
-        color="config"
-    ).properties(
-        height=500
+    chart = (
+        alt.Chart(df_learning_rates)
+        .mark_point()
+        .encode(
+            x=alt.X("learning_rate").scale(type="log", nice=False),
+            y=alt.Y("train_value_loss").scale(zero=False, domainMax=1.05, padding=20),
+            color="config",
+        )
+        .properties(height=500)
     )
 
     loess = chart.transform_loess(
-        "learning_rate",
-        "train_value_loss",
-        groupby=["config"],
-        bandwidth=0.3
+        "learning_rate", "train_value_loss", groupby=["config"], bandwidth=0.3
     ).mark_line()
 
     mo.ui.altair_chart(chart + loess)
@@ -122,22 +122,29 @@ def _(mo, read_experiment_results):
 
 @app.cell
 def _(alt, df, mo, smooth_column):
-    df2 = smooth_column(df, "train_value_loss", window_size=50, group_by=["config", "learning_rate"])
+    df2 = smooth_column(
+        df, "train_value_loss", window_size=50, group_by=["config", "learning_rate"]
+    )
 
     def make_loss_chart(df, config_name: str):
-        return alt.Chart(df[df["config"] == config_name]).mark_line().encode(
-            x=alt.X("step").scale(zero=False, nice=False),
-            y=alt.Y("train_value_loss").scale(zero=False, domain=(0.7, 1.15)),
-            color=alt.Color("learning_rate:Q").scale(type="log", scheme="viridis"),
-            tooltip=["learning_rate"]
-        ).properties(
-            height=500
+        return (
+            alt.Chart(df[df["config"] == config_name])
+            .mark_line()
+            .encode(
+                x=alt.X("step").scale(zero=False, nice=False),
+                y=alt.Y("train_value_loss").scale(zero=False, domain=(0.7, 1.15)),
+                color=alt.Color("learning_rate:Q").scale(type="log", scheme="viridis"),
+                tooltip=["learning_rate"],
+            )
+            .properties(height=500)
         )
 
-    mo.vstack([
-        mo.ui.altair_chart(make_loss_chart(df2, "debug")),
-        mo.ui.altair_chart(make_loss_chart(df2, "pico")),
-    ])
+    mo.vstack(
+        [
+            mo.ui.altair_chart(make_loss_chart(df2, "debug")),
+            mo.ui.altair_chart(make_loss_chart(df2, "pico")),
+        ]
+    )
     return df2, make_loss_chart
 
 

@@ -88,10 +88,14 @@ def _(
 def _(mo, np):
     # eyeball fit a scaling law of the form L(C) = C_c / (C ^ alpha_c)
     x1 = 4e9
-    y1 = mo.ui.slider(value=0.796, steps=np.linspace(0.6, 0.9, 301), full_width=True, label="y1")
+    y1 = mo.ui.slider(
+        value=0.796, steps=np.linspace(0.6, 0.9, 301), full_width=True, label="y1"
+    )
 
     x2 = 3e10
-    y2 = mo.ui.slider(value=0.769, steps=np.linspace(0.6, 0.9, 301), full_width=True, label="y2")
+    y2 = mo.ui.slider(
+        value=0.769, steps=np.linspace(0.6, 0.9, 301), full_width=True, label="y2"
+    )
     return x1, x2, y1, y2
 
 
@@ -112,19 +116,17 @@ def _(
 ):
     # Parsing results using read_experiment_results
     df = read_experiment_results("steps")
-    
+
     # Apply smoothing and filtering
     df = smooth_column(df, "train_value_loss", window_size=300)
     df = df.dropna(subset=["train_value_loss"])
     df = df[df["train_value_loss"] < 0.9]
-
 
     # Calculating power law
     def power_function_params(x1, y1, x2, y2):
         n = (math.log(y2) - math.log(y1)) / (math.log(x2) - math.log(x1))
         a = y1 / (x1**n)
         return a, n
-
 
     C_c, alpha_c = power_function_params(
         x1,
@@ -145,9 +147,7 @@ def _(
         alt.Chart(df)
         .mark_line()
         .encode(
-            x=alt.X("flops")
-            .axis(grid=False, format="e")
-            .scale(type="log", nice=False),
+            x=alt.X("flops").axis(grid=False, format="e").scale(type="log", nice=False),
             y=alt.Y("train_value_loss")
             .axis(grid=False, values=np.linspace(0, 1, 51))
             .scale(type="log", nice=False),

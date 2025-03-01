@@ -9,11 +9,12 @@ class ResidualBlock(nn.Module):
         super().__init__()
         self.ff = nn.Linear(hidden_dim, hidden_dim)
         self.activation = nn.ReLU()
-    
+
     def forward(self, x):
         out = self.ff(x)
         out = self.activation(out)
         return x + out
+
 
 class Model(L.LightningModule):
     def __init__(
@@ -21,22 +22,22 @@ class Model(L.LightningModule):
         config: dict = None,
     ):
         super().__init__()
-        
+
         if config is not None:
             self.save_hyperparameters(config)
-        
+
         # Fixed architecture parameters
         self.input_dim = 12 * 8 * 8 + 4  # board state + castling rights
         self.output_dim = 3
-        
+
         # Model
         self.model = nn.Sequential(
-            nn.Linear(self.input_dim, self.hparams.hidden_dim), # input layer
+            nn.Linear(self.input_dim, self.hparams.hidden_dim),  # input layer
             *[
                 ResidualBlock(self.hparams.hidden_dim)
                 for _ in range(self.hparams.hidden_layers)
             ],
-            nn.Linear(self.hparams.hidden_dim, self.output_dim) # output layer
+            nn.Linear(self.hparams.hidden_dim, self.output_dim),  # output layer
         )
 
     def training_step(self, batch, batch_idx):

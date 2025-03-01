@@ -12,7 +12,7 @@ class FlopsLogger(L.Callback):
         with torch.device("meta"):
             model = Model(config)
             x = torch.randn(config["batch_size"], 12 * 8 * 8 + 4)
-        
+
         model_fwd = lambda: model.model(x)
         model_loss = lambda y: y.sum()
         self.flops_per_batch = measure_flops(model, model_fwd, model_loss)
