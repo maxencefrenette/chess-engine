@@ -2,20 +2,21 @@
 """
 Convert LC0 training data to NPZ format for faster loading and simpler processing.
 
-This script reads LC0 chunk files, extracts the relevant features and labels, and
-saves them in the more efficient NPZ format as described in docs/training_data_format.md.
+This script reads LC0 training data from a .tar archive containing multiple .gz files,
+extracts the relevant features and labels, and saves them in the more efficient NPZ format
+as described in docs/training_data_format.md.
 """
 
 import os
 import argparse
-import glob
 import struct
 import gzip
+import tarfile
+import io
 import numpy as np
 from pathlib import Path
-import multiprocessing as mp
 from tqdm import tqdm
-from typing import Tuple, Optional, Generator
+from typing import Tuple, Optional, Generator, List, Dict, BinaryIO, Union
 
 # Define constants for LC0 chunk format
 V6_VERSION = struct.pack("i", 6)
@@ -34,15 +35,15 @@ V3_STRUCT_STRING = "4s7432s832sBBBBBBBb"
 class LeelaChunkParser:
     """Parser for Leela Chess Zero training data chunks."""
 
-    def __init__(self, filename: str, batch_size: int = 256):
+    def __init__(self, file_or_path: Union[str, BinaryIO], batch_size: int = 256):
         """
         Initialize the chunk parser.
         
         Args:
-            filename: Path to the chunk file.
+            file_or_path: Path to the chunk file or a file-like object.
             batch_size: Number of positions to process at once.
         """
-        self.filename = filename
+        self.file_or_path = file_or_path
         self.batch_size = batch_size
         
         # Initialize struct parsers
@@ -238,7 +239,14 @@ class LeelaChunkParser:
             Batches of (features, best_q) arrays.
         """
         try:
-            with gzip.open(self.filename, "rb") as chunk_file:
+            # Handle both file paths and file-like objects
+            if isinstance(self.file_or_path, str):
+                file_obj = gzip.open(self.file_or_path, "rb")
+            else:
+                # Assume it's already a file-like object
+                file_obj = gzip.GzipFile(fileobj=self.file_or_path, mode="rb")
+            
+            with file_obj as chunk_file:
                 # Get the version and record size from the first 4 bytes
                 version = chunk_file.read(4)
                 chunk_file.seek(0)
@@ -286,31 +294,46 @@ class LeelaChunkParser:
                     yield np.array(features_batch), np.array(best_q_batch)
                     
         except Exception as e:
-            print(f"Failed to parse {self.filename}: {e}")
+            source = self.file_or_path if isinstance(self.file_or_path, str) else "in-memory file"
+            print(f"Failed to parse {source}: {e}")
             raise
 
 
-def process_chunk_file(filename: str, output_dir: Path, batch_size: int = 1000) -> Tuple[int, int]:
+def process_chunk_file(file_obj_or_path: Union[str, BinaryIO], output_dir: Path, 
+                  batch_size: int = 1000, filename: Optional[str] = None) -> Tuple[int, int]:
     """
     Process a single LC0 chunk file and save as NPZ.
     
     Args:
-        filename: Path to the LC0 chunk file
+        file_obj_or_path: Path to the LC0 chunk file or a file-like object
         output_dir: Directory to save the NPZ files
         batch_size: Number of positions to process at once
+        filename: Optional filename to use for output (needed when file_obj_or_path is a file object)
         
     Returns:
         Tuple of (positions_processed, bytes_saved)
     """
     # Track stats
     positions_processed = 0
-    original_size = os.path.getsize(filename)
+    original_size = 0
     npz_size = 0
     
     # Create output filename
-    base_name = os.path.basename(filename)
-    if base_name.endswith('.gz'):
-        base_name = base_name[:-3]
+    if isinstance(file_obj_or_path, str):
+        original_size = os.path.getsize(file_obj_or_path)
+        base_name = os.path.basename(file_obj_or_path)
+        if base_name.endswith('.gz'):
+            base_name = base_name[:-3]
+    else:
+        # For in-memory files, use the provided filename
+        if not filename:
+            raise ValueError("Filename must be provided when processing in-memory files")
+        base_name = os.path.basename(filename)
+        if base_name.endswith('.gz'):
+            base_name = base_name[:-3]
+        # We don't know the original size for in-memory files, so set to 0
+        original_size = 0
+    
     output_path = output_dir / f"{base_name}.npz"
     
     # Process batches
@@ -319,7 +342,7 @@ def process_chunk_file(filename: str, output_dir: Path, batch_size: int = 1000) 
     
     try:
         # Initialize parser
-        parser = LeelaChunkParser(filename, batch_size=batch_size)
+        parser = LeelaChunkParser(file_obj_or_path, batch_size=batch_size)
         
         # Process all batches from this file
         for features, best_q in parser.parse_chunk():
@@ -345,77 +368,123 @@ def process_chunk_file(filename: str, output_dir: Path, batch_size: int = 1000) 
             # Calculate compression stats
             npz_size = os.path.getsize(output_path)
     except Exception as e:
-        print(f"Error processing {filename}: {e}")
+        source = file_obj_or_path if isinstance(file_obj_or_path, str) else filename or "in-memory file"
+        print(f"Error processing {source}: {e}")
         return 0, 0
     
     return positions_processed, original_size - npz_size
 
 
-def process_chunk_files(
-    input_pattern: str, 
-    output_dir: Path, 
-    workers: Optional[int] = None,
+def process_tar_archive(
+    tar_path: str,
+    output_dir: Path,
     batch_size: int = 1000
 ) -> None:
     """
-    Process multiple LC0 chunk files using multiple workers.
+    Process a tar archive containing LC0 chunk files (.gz files) and output a single NPZ file.
     
     Args:
-        input_pattern: Glob pattern to match LC0 chunk files
-        output_dir: Directory to save the NPZ files
-        workers: Number of worker processes to use (defaults to CPU count - 1)
+        tar_path: Path to the tar archive containing .gz files
+        output_dir: Directory to save the combined NPZ file
         batch_size: Number of positions to process at once
     """
-    # Get all matching files
-    chunk_files = glob.glob(input_pattern)
-    if not chunk_files:
-        print(f"No files found matching pattern: {input_pattern}")
-        return
-    
-    print(f"Found {len(chunk_files)} chunk files to process")
-    
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Determine number of workers
-    if workers is None:
-        workers = max(1, mp.cpu_count() - 1)
+    # Check if the file exists and is a tar file
+    if not os.path.exists(tar_path):
+        print(f"File not found: {tar_path}")
+        return
     
-    print(f"Using {workers} worker processes")
+    if not tarfile.is_tarfile(tar_path):
+        print(f"Not a valid tar file: {tar_path}")
+        return
     
-    # Process files in parallel
-    with mp.Pool(workers) as pool:
-        results = list(tqdm(
-            pool.starmap(
-                process_chunk_file, 
-                [(f, output_dir, batch_size) for f in chunk_files]
-            ),
-            total=len(chunk_files),
-            desc="Converting chunks"
-        ))
+    # Create output filename from the tar filename
+    tar_base_name = os.path.basename(tar_path)
+    if tar_base_name.endswith('.tar'):
+        tar_base_name = tar_base_name[:-4]
+    output_path = output_dir / f"{tar_base_name}.npz"
     
-    # Calculate and print statistics
-    total_positions = sum(r[0] for r in results)
-    total_bytes_saved = sum(r[1] for r in results)
-    print(f"Processed {total_positions} positions")
-    print(f"Saved {total_bytes_saved/1024/1024:.2f} MB of disk space")
+    # Accumulators for all features and best_q values
+    all_features = []
+    all_best_q = []
+    
+    # Open the tar file and list all .gz files
+    with tarfile.open(tar_path, 'r') as tar:
+        # Get all .gz files in the archive, excluding macOS hidden files
+        gz_files = [m for m in tar.getmembers() if m.name.endswith('.gz') and not os.path.basename(m.name).startswith('._')]
+        
+        if not gz_files:
+            print(f"No .gz files found in the tar archive: {tar_path}")
+            return
+        
+        print(f"Found {len(gz_files)} .gz files in the tar archive")
+        
+        # Process each file sequentially
+        total_positions = 0
+        for member in tqdm(gz_files, desc="Processing files"):
+            file_obj = tar.extractfile(member)
+            if file_obj is None:
+                print(f"Could not extract {member.name} from tar")
+                continue
+            
+            try:
+                # Process the file directly without saving to disk
+                parser = LeelaChunkParser(file_obj, batch_size=batch_size)
+                
+                # Process all batches from this file
+                file_features = []
+                file_best_q = []
+                
+                for features, best_q in parser.parse_chunk():
+                    batch_positions = features.shape[0]
+                    total_positions += batch_positions
+                    
+                    # Accumulate features and best_q
+                    file_features.append(features)
+                    file_best_q.append(best_q)
+                
+                # Combine all batches from this file
+                if file_features and file_best_q:
+                    file_features = np.vstack(file_features)
+                    file_best_q = np.vstack(file_best_q)
+                    
+                    # Add to overall accumulators
+                    all_features.append(file_features)
+                    all_best_q.append(file_best_q)
+            except Exception as e:
+                print(f"Error processing {member.name}: {e}")
+        
+        # Combine all data from all files
+        if all_features and all_best_q:
+            combined_features = np.vstack(all_features)
+            combined_best_q = np.vstack(all_best_q)
+            
+            # Save as a single NPZ file
+            np.savez_compressed(
+                output_path,
+                features=combined_features,
+                best_q=combined_best_q
+            )
+            
+            print(f"Processed {total_positions} positions")
+            print(f"Created combined NPZ file: {output_path} with {combined_features.shape[0]} positions")
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Convert LC0 training data to NPZ format')
-    parser.add_argument('input', help='Input pattern for LC0 chunk files (e.g., "/path/to/data/*.gz")')
+    parser = argparse.ArgumentParser(description='Convert LC0 training data from a tar archive to NPZ format')
+    parser.add_argument('input', help='Path to the tar archive containing .gz files (e.g., "/path/to/data.tar")')
     parser.add_argument('output', help='Output directory for NPZ files')
-    parser.add_argument('--workers', type=int, help='Number of worker processes')
     parser.add_argument('--batch-size', type=int, default=1000, 
                         help='Number of positions to process at once')
     args = parser.parse_args()
     
     output_dir = Path(args.output)
     
-    process_chunk_files(
-        input_pattern=args.input,
+    process_tar_archive(
+        tar_path=args.input,
         output_dir=output_dir,
-        workers=args.workers,
         batch_size=args.batch_size
     )
 
