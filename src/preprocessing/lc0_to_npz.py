@@ -232,9 +232,9 @@ class LeelaChunkParser:
 
         return record
 
-    def parse_chunk(self) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
+    def parse_game(self) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Parse the chunk file and return all features and best_q values at once.
+        Parse a game file and return all features and best_q values at once.
 
         Returns:
             A tuple of (features, best_q) arrays containing all positions.
@@ -281,7 +281,7 @@ class LeelaChunkParser:
                     best_q_all.append(best_q)
 
                 # Return all records at once
-                yield np.array(features_all), np.array(best_q_all)
+                return np.array(features_all), np.array(best_q_all)
 
         except Exception as e:
             source = (
@@ -351,13 +351,12 @@ def process_tar_archive(tar_path: str, output_dir: Path) -> None:
                 parser = LeelaChunkParser(file_obj)
 
                 # Process all positions from this file - we only get one yield with all data
-                for features, best_q in parser.parse_chunk():
-                    total_positions += features.shape[0]
+                features, best_q = parser.parse_game()
+                total_positions += features.shape[0]
 
-                    # Add to overall accumulators
-                    all_features.append(features)
-                    all_best_q.append(best_q)
-                    break  # Since we now get all data at once
+                # Add to overall accumulators
+                all_features.append(features)
+                all_best_q.append(best_q)
             except Exception as e:
                 print(f"Error processing {member.name}: {e}")
 
