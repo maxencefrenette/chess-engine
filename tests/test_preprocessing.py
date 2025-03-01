@@ -24,9 +24,7 @@ def test_lc0_to_npz_integration():
         assert test_tar_path.exists(), "Test data file not found"
 
         # Process the tar file
-        process_tar_archive(
-            tar_path=str(test_tar_path), output_dir=output_dir, batch_size=256
-        )
+        process_tar_archive(tar_path=str(test_tar_path), output_dir=output_dir)
 
         # Verify output file exists
         output_path = output_dir / "lc0-data-sample.npz"

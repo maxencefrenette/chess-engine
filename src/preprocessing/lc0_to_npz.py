@@ -36,16 +36,14 @@ V3_STRUCT_STRING = "4s7432s832sBBBBBBBb"
 class LeelaChunkParser:
     """Parser for Leela Chess Zero training data chunks."""
 
-    def __init__(self, file_or_path: Union[str, BinaryIO], batch_size: int = 256):
+    def __init__(self, file_or_path: Union[str, BinaryIO]):
         """
         Initialize the chunk parser.
 
         Args:
             file_or_path: Path to the chunk file or a file-like object.
-            batch_size: Number of positions to process at once.
         """
         self.file_or_path = file_or_path
-        self.batch_size = batch_size
 
         # Initialize struct parsers
         self.v6_struct = struct.Struct(V6_STRUCT_STRING)
@@ -236,10 +234,10 @@ class LeelaChunkParser:
 
     def parse_chunk(self) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
         """
-        Parse the chunk file and yield batches of (features, best_q).
+        Parse the chunk file and return all features and best_q values at once.
 
-        Yields:
-            Batches of (features, best_q) arrays.
+        Returns:
+            A tuple of (features, best_q) arrays containing all positions.
         """
         try:
             # Handle both file paths and file-like objects
@@ -256,45 +254,34 @@ class LeelaChunkParser:
 
                 version, record_size = self._get_version_and_record_size(version)
 
-                # Initialize batch arrays
-                features_batch = []
-                best_q_batch = []
+                # Initialize arrays for all features and best_q values
+                features_all = []
+                best_q_all = []
 
-                # Read records from the chunk file
-                while True:
-                    # Read multiple records at once
-                    chunk_data = chunk_file.read(self.batch_size * record_size)
-                    if not chunk_data:
+                # Read the entire file
+                chunk_data = chunk_file.read()
+
+                # Process each record in the chunk
+                for i in range(0, len(chunk_data), record_size):
+                    if i + record_size > len(chunk_data):
                         break
 
-                    # Process each record in the chunk
-                    for i in range(0, len(chunk_data), record_size):
-                        if i + record_size > len(chunk_data):
-                            break
+                    # Extract one record
+                    record = chunk_data[i : i + record_size]
 
-                        # Extract one record
-                        record = chunk_data[i : i + record_size]
+                    # Adapt older versions to V6 format
+                    if version != V6_VERSION:
+                        record = self._adapt_v3_v4_v5_to_v6(record, version)
 
-                        # Adapt older versions to V6 format
-                        if version != V6_VERSION:
-                            record = self._adapt_v3_v4_v5_to_v6(record, version)
+                    # Parse the record
+                    features, best_q = self._parse_v6_record(record)
 
-                        # Parse the record
-                        features, best_q = self._parse_v6_record(record)
+                    # Add to arrays
+                    features_all.append(features)
+                    best_q_all.append(best_q)
 
-                        # Add to batch
-                        features_batch.append(features)
-                        best_q_batch.append(best_q)
-
-                        # Yield batch when it reaches the desired size
-                        if len(features_batch) >= self.batch_size:
-                            yield np.array(features_batch), np.array(best_q_batch)
-                            features_batch = []
-                            best_q_batch = []
-
-                # Yield any remaining records
-                if features_batch:
-                    yield np.array(features_batch), np.array(best_q_batch)
+                # Return all records at once
+                yield np.array(features_all), np.array(best_q_all)
 
         except Exception as e:
             source = (
@@ -306,98 +293,13 @@ class LeelaChunkParser:
             raise
 
 
-def process_chunk_file(
-    file_obj_or_path: Union[str, BinaryIO],
-    output_dir: Path,
-    batch_size: int = 1000,
-    filename: Optional[str] = None,
-) -> Tuple[int, int]:
-    """
-    Process a single LC0 chunk file and save as NPZ.
-
-    Args:
-        file_obj_or_path: Path to the LC0 chunk file or a file-like object
-        output_dir: Directory to save the NPZ files
-        batch_size: Number of positions to process at once
-        filename: Optional filename to use for output (needed when file_obj_or_path is a file object)
-
-    Returns:
-        Tuple of (positions_processed, bytes_saved)
-    """
-    # Track stats
-    positions_processed = 0
-    original_size = 0
-    npz_size = 0
-
-    # Create output filename
-    if isinstance(file_obj_or_path, str):
-        original_size = os.path.getsize(file_obj_or_path)
-        base_name = os.path.basename(file_obj_or_path)
-        if base_name.endswith(".gz"):
-            base_name = base_name[:-3]
-    else:
-        # For in-memory files, use the provided filename
-        if not filename:
-            raise ValueError(
-                "Filename must be provided when processing in-memory files"
-            )
-        base_name = os.path.basename(filename)
-        if base_name.endswith(".gz"):
-            base_name = base_name[:-3]
-        # We don't know the original size for in-memory files, so set to 0
-        original_size = 0
-
-    output_path = output_dir / f"{base_name}.npz"
-
-    # Process batches
-    all_features = []
-    all_best_q = []
-
-    try:
-        # Initialize parser
-        parser = LeelaChunkParser(file_obj_or_path, batch_size=batch_size)
-
-        # Process all batches from this file
-        for features, best_q in parser.parse_chunk():
-            batch_size = features.shape[0]
-            positions_processed += batch_size
-
-            # Accumulate features and best_q
-            all_features.append(features)
-            all_best_q.append(best_q)
-
-        # Combine all batches
-        if all_features and all_best_q:
-            all_features = np.vstack(all_features)
-            all_best_q = np.vstack(all_best_q)
-
-            # Save as NPZ
-            np.savez_compressed(output_path, features=all_features, best_q=all_best_q)
-
-            # Calculate compression stats
-            npz_size = os.path.getsize(output_path)
-    except Exception as e:
-        source = (
-            file_obj_or_path
-            if isinstance(file_obj_or_path, str)
-            else filename or "in-memory file"
-        )
-        print(f"Error processing {source}: {e}")
-        return 0, 0
-
-    return positions_processed, original_size - npz_size
-
-
-def process_tar_archive(
-    tar_path: str, output_dir: Path, batch_size: int = 1000
-) -> None:
+def process_tar_archive(tar_path: str, output_dir: Path) -> None:
     """
     Process a tar archive containing LC0 chunk files (.gz files) and output a single NPZ file.
 
     Args:
         tar_path: Path to the tar archive containing .gz files
         output_dir: Directory to save the combined NPZ file
-        batch_size: Number of positions to process at once
     """
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -446,28 +348,16 @@ def process_tar_archive(
 
             try:
                 # Process the file directly without saving to disk
-                parser = LeelaChunkParser(file_obj, batch_size=batch_size)
+                parser = LeelaChunkParser(file_obj)
 
-                # Process all batches from this file
-                file_features = []
-                file_best_q = []
-
+                # Process all positions from this file - we only get one yield with all data
                 for features, best_q in parser.parse_chunk():
-                    batch_positions = features.shape[0]
-                    total_positions += batch_positions
-
-                    # Accumulate features and best_q
-                    file_features.append(features)
-                    file_best_q.append(best_q)
-
-                # Combine all batches from this file
-                if file_features and file_best_q:
-                    file_features = np.vstack(file_features)
-                    file_best_q = np.vstack(file_best_q)
+                    total_positions += features.shape[0]
 
                     # Add to overall accumulators
-                    all_features.append(file_features)
-                    all_best_q.append(file_best_q)
+                    all_features.append(features)
+                    all_best_q.append(best_q)
+                    break  # Since we now get all data at once
             except Exception as e:
                 print(f"Error processing {member.name}: {e}")
 
