@@ -36,14 +36,14 @@ V3_STRUCT_STRING = "4s7432s832sBBBBBBBb"
 class LeelaChunkParser:
     """Parser for Leela Chess Zero training data chunks."""
 
-    def __init__(self, file_or_path: Union[str, BinaryIO]):
+    def __init__(self, file_obj: BinaryIO):
         """
         Initialize the chunk parser.
 
         Args:
-            file_or_path: Path to the chunk file or a file-like object.
+            file_obj: A file-like object containing the game data.
         """
-        self.file_or_path = file_or_path
+        self.file_obj = file_obj
 
         # Initialize struct parsers
         self.v6_struct = struct.Struct(V6_STRUCT_STRING)
@@ -240,12 +240,7 @@ class LeelaChunkParser:
             A tuple of (features, best_q) arrays containing all positions.
         """
         try:
-            # Handle both file paths and file-like objects
-            if isinstance(self.file_or_path, str):
-                file_obj = gzip.open(self.file_or_path, "rb")
-            else:
-                # Assume it's already a file-like object
-                file_obj = gzip.GzipFile(fileobj=self.file_or_path, mode="rb")
+            file_obj = gzip.GzipFile(fileobj=self.file_obj, mode="rb")
 
             with file_obj as chunk_file:
                 # Get the version and record size from the first 4 bytes
@@ -284,12 +279,7 @@ class LeelaChunkParser:
                 return np.array(features_all), np.array(best_q_all)
 
         except Exception as e:
-            source = (
-                self.file_or_path
-                if isinstance(self.file_or_path, str)
-                else "in-memory file"
-            )
-            print(f"Failed to parse {source}: {e}")
+            print(f"Failed to parse game file: {e}")
             raise
 
 
@@ -350,7 +340,7 @@ def process_tar_archive(tar_path: str, output_dir: Path) -> None:
                 # Process the file directly without saving to disk
                 parser = LeelaChunkParser(file_obj)
 
-                # Process all positions from this file - we only get one yield with all data
+                # Process all positions from this file
                 features, best_q = parser.parse_game()
                 total_positions += features.shape[0]
 
@@ -385,19 +375,11 @@ def main():
         help='Path to the tar archive containing .gz files (e.g., "/path/to/data.tar")',
     )
     parser.add_argument("output", help="Output directory for NPZ files")
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=1000,
-        help="Number of positions to process at once",
-    )
     args = parser.parse_args()
 
     output_dir = Path(args.output)
 
-    process_tar_archive(
-        tar_path=args.input, output_dir=output_dir, batch_size=args.batch_size
-    )
+    process_tar_archive(tar_path=args.input, output_dir=output_dir)
 
 
 if __name__ == "__main__":
