@@ -17,7 +17,7 @@ def test_lc0_to_npz_integration():
     # Setup test directory
     temp_dir = tempfile.mkdtemp()
     output_dir = Path(temp_dir)
-    test_tar_path = Path(__file__).parent.parent / "test_data" / "lc0-data-sample.tar"
+    test_tar_path = Path(__file__).parent / "test_data" / "lc0-data-sample.tar"
 
     try:
         # Ensure test data exists
