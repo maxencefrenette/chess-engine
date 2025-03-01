@@ -325,11 +325,9 @@ def process_tar_archive(tar_path: str, output_dir: Path) -> None:
             print(f"No .gz files found in the tar archive: {tar_path}")
             return
 
-        print(f"Found {len(gz_files)} .gz files in the tar archive")
-
         # Process each file sequentially
         total_positions = 0
-        for member in tqdm(gz_files, desc="Processing files"):
+        for member in tqdm(gz_files, desc="Processing games", leave=False):
             file_obj = tar.extractfile(member)
             if file_obj is None:
                 print(f"Could not extract {member.name} from tar")
@@ -359,11 +357,6 @@ def process_tar_archive(tar_path: str, output_dir: Path) -> None:
                 output_path, features=combined_features, best_q=combined_best_q
             )
 
-            print(f"Processed {total_positions} positions")
-            print(
-                f"Created combined NPZ file: {output_path} with {combined_features.shape[0]} positions"
-            )
-
 
 def process_tar_archives(input_pattern: str, output_dir: Path) -> None:
     """
@@ -389,7 +382,6 @@ def process_tar_archives(input_pattern: str, output_dir: Path) -> None:
 
     # Process each tar file sequentially
     for tar_path in tqdm(tar_files, desc="Processing tar archives"):
-        print(f"\nProcessing {tar_path}...")
         process_tar_archive(tar_path=tar_path, output_dir=output_dir)
 
 
