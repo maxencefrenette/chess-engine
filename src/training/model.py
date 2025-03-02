@@ -8,7 +8,7 @@ class ResidualBlock(nn.Module):
     def __init__(self, hidden_dim):
         super().__init__()
         self.ff = nn.Linear(hidden_dim, hidden_dim)
-        self.activation = nn.ReLU()
+        self.activation = nn.GELU()
 
     def forward(self, x):
         out = self.ff(x)
