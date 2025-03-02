@@ -3,6 +3,4 @@ batch_size: 32
 hidden_dim: 32
 hidden_layers: 4
 learning_rate: 0.00034
-sample: 16
-shuffle_size: 16384
 steps: 90000

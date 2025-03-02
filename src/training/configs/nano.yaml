@@ -6,6 +6,4 @@ learning_rate: 3.4e-4
 # training
 batch_size: 32
 steps: 30000
-shuffle_size: 16384
-sample: 16
 accelerator: cpu
