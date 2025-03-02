@@ -352,9 +352,15 @@ def process_tar_archive(tar_path: str, output_dir: Path) -> None:
             combined_features = np.vstack(all_features)
             combined_best_q = np.vstack(all_best_q)
 
-            # Save as a single NPZ file
+            # Shuffle the data (using the same random permutation for both arrays)
+            num_samples = combined_features.shape[0]
+            indices = np.random.permutation(num_samples)
+            shuffled_features = combined_features[indices]
+            shuffled_best_q = combined_best_q[indices]
+
+            # Save as a single NPZ file with shuffled data
             np.savez_compressed(
-                output_path, features=combined_features, best_q=combined_best_q
+                output_path, features=shuffled_features, best_q=shuffled_best_q
             )
 
 
