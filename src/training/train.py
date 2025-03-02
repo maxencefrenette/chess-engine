@@ -25,7 +25,6 @@ def train(
     csv_logger: Optional[CSVLogger] = None,
     accumulate_grad_batches: int = 1,
     extra_callbacks: list[L.Callback] = [],
-    single_thread: bool = False,
 ) -> dict:
     # Initialize wandb loggerloggers
     if csv_logger is None:
@@ -41,8 +40,7 @@ def train(
     model = Model(config)
     dataset = Lc0Data(
         config=config,
-        file_path=os.getenv("LEELA_DATA_PATH"),
-        workers=0 if single_thread else None,
+        file_path=os.getenv("TRAINING_DATA_PATH"),
     )
     trainer = L.Trainer(
         max_steps=config["steps"],

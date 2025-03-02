@@ -27,7 +27,7 @@ class Model(L.LightningModule):
             self.save_hyperparameters(config)
 
         # Fixed architecture parameters
-        self.input_dim = 12 * 8 * 8 + 4  # board state + castling rights
+        self.input_dim = 780
         self.output_dim = 3
 
         # Model
@@ -41,22 +41,11 @@ class Model(L.LightningModule):
         )
 
     def training_step(self, batch, batch_idx):
-        (board, castling_rights, _probs, winner, best_q, plies_left) = batch
+        (features, wdl) = batch
 
-        board = board.reshape(-1, 12 * 8 * 8)
-        x = torch.cat([board, castling_rights], dim=1)
-
-        # For now it's safe to train on best_q since we're doing supervised learning
-        # on leela data and not reinforcement learning on self-play data
-        y = best_q
-
-        y_hat = self.model(x)
-        loss = nn.functional.cross_entropy(y_hat, y)
+        y_hat = self.model(features)
+        loss = nn.functional.cross_entropy(y_hat, wdl)
         self.log("train_value_loss", loss)
-        self.log(
-            "train_value_accuracy",
-            (y_hat.argmax(dim=1) == best_q.argmax(dim=1)).float().mean(),
-        )
 
         return loss
 
