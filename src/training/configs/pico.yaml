@@ -1,7 +1,7 @@
 # model
 hidden_dim: 16
 hidden_layers: 4
-learning_rate: 1.2e-3
+learning_rate: 9.0e-4
 
 # training
 batch_size: 32
