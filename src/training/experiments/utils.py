@@ -1,7 +1,13 @@
+import concurrent.futures
+import os
 from pathlib import Path
 
+import marimo as mo
 import pandas as pd
 import yaml
+from lightning.pytorch.loggers import CSVLogger
+
+from src.training.train import train
 
 
 def read_experiment_results(experiment_name: str) -> pd.DataFrame:
@@ -84,3 +90,45 @@ def smooth_column(
         lambda x: x.rolling(window_size, center=True, closed="both").mean()
     )
     return df_copy
+
+
+def run_single_experiment(experiment_name: str, trial_name: str, config: dict):
+    """
+    Run a single experiment with the given configuration.
+
+    Args:
+        experiment_name: Name of the experiment (e.g., "learning_rate", "batch_size")
+        trial_name: Unique identifier for this specific trial
+        config: Configuration dictionary to pass to the train function
+    """
+    csv_logger = CSVLogger(
+        save_dir=Path(__file__).parents[1] / "experiment_logs",
+        name=experiment_name,
+        version=trial_name,
+    )
+
+    train(config, csv_logger=csv_logger)
+
+
+def run_experiments(experiment_name: str, experiment_arguments: list[tuple[str, dict]]):
+    """
+    Run multiple experiments in parallel.
+
+    Args:
+        experiment_name: Name of the experiment (e.g., "learning_rate", "batch_size")
+        experiment_arguments: List of tuples (trial_name, config) to run in parallel
+    """
+
+    # Set the maximum number of parallel experiments based on available CPU cores
+    max_workers = min(os.cpu_count() or 1, len(experiment_arguments), 4)
+
+    # Run experiments in parallel
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(run_single_experiment, experiment_name, trial_name, config)
+            for trial_name, config in experiment_arguments
+        ]
+
+        # Wait for all experiments to complete
+        for future in mo.status.progress_bar(concurrent.futures.as_completed(futures)):
+            future.result()

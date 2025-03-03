@@ -8,28 +8,34 @@ app = marimo.App(width="medium")
 def _(__file__):
     from pathlib import Path
 
+    import altair as alt
     import marimo as mo
     import numpy as np
     import pandas as pd
     import yaml
     from dotenv import load_dotenv
-    from lightning.pytorch.loggers import CSVLogger
 
-    from src.training.experiments.utils import read_experiment_results, smooth_column
-    from src.training.train import load_config, train
+    from src.training.experiments.utils import (
+        read_experiment_results,
+        run_experiments,
+        run_single_experiment,
+        smooth_column,
+    )
+    from src.training.train import load_config
 
     load_dotenv(Path(__file__).parents[3] / ".env")
     return (
-        CSVLogger,
         Path,
+        alt,
         load_config,
         load_dotenv,
         mo,
         np,
         pd,
         read_experiment_results,
+        run_experiments,
+        run_single_experiment,
         smooth_column,
-        train,
         yaml,
     )
 
@@ -51,44 +57,45 @@ def _(mo, np):
 
 @app.cell
 def _(
-    CSVLogger,
-    Path,
-    __file__,
     configs,
     dictionnary,
     load_config,
     mo,
+    results,
     run_button,
-    train,
+    run_single_experiment,
 ):
-    def train_experiment(config_name: str, learning_rates: list[float]):
+    def run_learning_rate_experiments(config_name: str, learning_rates: list[float]):
         config = load_config(config_name)
 
-        for i, lr in enumerate(mo.status.progress_bar(learning_rates)):
+        # Prepare experiment arguments
+        experiment_arguments = []
+        for i, lr in enumerate(learning_rates):
             config_copy = config.copy()
             config_copy["learning_rate"] = lr
+            trial_name = f"{config_name}_{i}"
+            experiment_arguments.append((trial_name, config_copy))
 
-            csv_logger = CSVLogger(
-                save_dir=Path(__file__).parents[1] / "experiment_logs",
-                name="learning_rate",
-                version=f"{config_name}_{i}",
-            )
+        # Run experiments one by one
+        with mo.capture_stderr() as _stderr:
+            with mo.capture_stdout() as _stdout:
+                # Parallel implementation runs out of ram right now
+                # results = run_experiments("learning_rate", experiment_arguments)
 
-            with mo.capture_stderr() as _stderr:
-                with mo.capture_stdout() as _stdout:
-                    metrics = train(config_copy, csv_logger=csv_logger)
+                for trial_name, config in mo.status.progress_bar(experiment_arguments):
+                    run_single_experiment("learning_rate", trial_name, config)
+
+        return results
 
     if run_button.value:
         for c, learning_rates in configs.items():
             if dictionnary.value[c]:
-                train_experiment(c, learning_rates)
-    return c, learning_rates, train_experiment
+                run_learning_rate_experiments(c, learning_rates)
+    return c, learning_rates, run_learning_rate_experiments
 
 
 @app.cell
-def _(mo, read_experiment_results):
-    import altair as alt
-
+def _(alt, mo, read_experiment_results):
     # Read all experiment results
     df = read_experiment_results("learning_rate")
 
@@ -117,7 +124,7 @@ def _(mo, read_experiment_results):
     ).mark_line()
 
     mo.ui.altair_chart(chart + loess)
-    return alt, chart, df, df_learning_rates, loess
+    return chart, df, df_learning_rates, loess
 
 
 @app.cell
