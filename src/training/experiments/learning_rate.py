@@ -43,8 +43,9 @@ def _(__file__):
 @app.cell
 def _(mo, np):
     configs = {
-        "debug": np.geomspace(0.00001, 0.1, num=30).tolist(),
-        "pico": np.geomspace(0.00001, 0.1, num=30).tolist(),
+        "debug": np.geomspace(1.0e-5, 1e-1, num=30).tolist(),
+        "pico": np.geomspace(1.0e-5, 1e-1, num=30).tolist(),
+        "nano": np.geomspace(3.0e-6, 3.0e-2, num=30).tolist(),
     }
 
     checkboxes = {config: mo.ui.checkbox() for config in configs.keys()}
@@ -61,7 +62,6 @@ def _(
     dictionnary,
     load_config,
     mo,
-    results,
     run_button,
     run_single_experiment,
 ):
@@ -84,8 +84,6 @@ def _(
 
                 for trial_name, config in mo.status.progress_bar(experiment_arguments):
                     run_single_experiment("learning_rate", trial_name, config)
-
-        return results
 
     if run_button.value:
         for c, learning_rates in configs.items():
