@@ -5,7 +5,7 @@ from typing import Optional
 import lightning as L
 import yaml
 from dotenv import load_dotenv
-from lightning.pytorch.loggers import CSVLogger, WandbLogger
+from lightning.pytorch.loggers import CSVLogger
 
 from src.training.data_module import Lc0Data
 from src.training.flops_logger import FlopsLogger
@@ -26,14 +26,9 @@ def train(
     accumulate_grad_batches: int = 1,
     extra_callbacks: list[L.Callback] = [],
 ) -> dict:
-    # Initialize wandb loggerloggers
+    # Initialize logger
     if csv_logger is None:
         csv_logger = CSVLogger(save_dir=Path(__file__).parent)
-    wandb_logger = WandbLogger(
-        project="chess-engine",
-        name=None,
-    )
-    loggers = [csv_logger, wandb_logger]
 
     flops_logger = FlopsLogger(config)
 
@@ -45,7 +40,7 @@ def train(
     trainer = L.Trainer(
         max_steps=config["steps"],
         log_every_n_steps=max(1, config["steps"] // 1000),
-        logger=loggers,
+        logger=csv_logger,
         enable_model_summary=not verbose,
         callbacks=[flops_logger] + extra_callbacks,
         accelerator=config["accelerator"],
@@ -53,9 +48,6 @@ def train(
     )
 
     trainer.fit(model, dataset)
-
-    path = Path(os.getenv("MODELS_PATH")) / f"{wandb_logger.experiment.name}.pth"
-    trainer.save_checkpoint(path)
 
     return trainer.logged_metrics
 
