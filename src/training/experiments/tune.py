@@ -1,19 +1,17 @@
 import os
 from pathlib import Path
 
+import optuna
 import pandas as pd
 from dotenv import load_dotenv
 from lightning.pytorch.loggers import CSVLogger
-from vizier import service
-from vizier.service import clients
-from vizier.service import pyvizier as vz
 
 from src.training.train import train
 
 load_dotenv(Path(__file__).parents[3] / ".env")
 
 num_trials = 10
-experiment_name = "tune_1e10"
+experiment_name = "tune"
 
 
 def read_trial_results(experiment_name: str, version: int) -> pd.DataFrame:
@@ -28,57 +26,63 @@ def read_trial_results(experiment_name: str, version: int) -> pd.DataFrame:
     return pd.read_csv(metrics_path)
 
 
+def objective(trial: optuna.Trial) -> float:
+    """Objective function for Optuna optimization."""
+    # Define the hyperparameters to optimize
+    config = {
+        "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-1, log=True),
+        "hidden_layers": trial.suggest_int("hidden_layers", 1, 10),
+        "hidden_dim": trial.suggest_categorical("hidden_dim", [4, 8, 16, 32]),
+        "batch_size": 32,
+        "steps": 500,
+        "accelerator": "cpu",
+    }
+
+    # Create a logger for this trial
+    trial_num = trial.number
+    csv_logger = CSVLogger(
+        save_dir=os.getenv("EXPERIMENT_LOGS_DIR"),
+        name=experiment_name,
+        version=trial_num,
+    )
+    trial.set_user_attr("logs_path", csv_logger.log_dir)
+
+    # Train the model with these hyperparameters
+    train(config, csv_logger=csv_logger)
+
+    # Get the results
+    results = read_trial_results(experiment_name, trial_num)
+    train_value_loss = results.iloc[-1]["train_value_loss"]
+    flops = results.iloc[-1]["flops"]
+    print(f"Trial {trial_num} completed with train_value_loss: {train_value_loss:.3f}")
+
+    return flops, train_value_loss
+
+
 def main():
-    problem = vz.ProblemStatement()
-    problem_root = problem.search_space.root
-    problem_root.add_float_param(name="learning_rate", min_value=1e-5, max_value=1e-1)
-    problem_root.add_int_param(name="hidden_layers", min_value=1, max_value=10)
-    problem_root.add_discrete_param(name="hidden_dim", feasible_values=[4, 8, 16, 32])
-    problem.metric_information.append(
-        vz.MetricInformation(
-            name="train_value_loss", goal=vz.ObjectiveMetricGoal.MINIMIZE
-        )
+    # Create a new study
+    study = optuna.create_study(
+        study_name=experiment_name,
+        directions=["minimize", "minimize"],  # For flops and train_value_loss
+        storage=f"sqlite:///{os.getenv('OPTUNA_DB_PATH')}",
+        load_if_exists=True,
     )
 
-    study_config = vz.StudyConfig.from_problem(problem)
-    study_config.algorithm = "DEFAULT"
+    # Run the optimization
+    study.optimize(objective, n_trials=num_trials)
 
-    study_client = clients.Study.from_study_config(
-        study_config, owner="maxence", study_id=experiment_name
-    )
-    print("Local SQL database file located at: ", service.VIZIER_DB_PATH)
+    print("\nPareto Frontier:")
+    print("Trial    FLOPS           Train Loss    Parameters")
+    print("-" * 70)
 
-    for i in range(num_trials):
-        suggestion = study_client.suggest(count=1)[0]
-
-        config = {
-            **suggestion.parameters,
-            "hidden_layers": int(suggestion.parameters["hidden_layers"]),
-            "batch_size": 32,
-            "steps": 500,
-            "accelerator": "cpu",
-        }
-
-        csv_logger = CSVLogger(
-            save_dir=os.getenv("EXPERIMENT_LOGS_DIR"),
-            name=experiment_name,
-            version=i,
-        )
-        train(config, csv_logger=csv_logger)
-
-        results = read_trial_results(experiment_name, i)
-        train_value_loss = results.iloc[-1]["train_value_loss"]
-        print(f"Trial {i} completed with train_value_loss: {train_value_loss:.3f}")
-
-        final_measurement = vz.Measurement({"train_value_loss": train_value_loss})
-        suggestion.complete(final_measurement)
-
-    for optimal_trial in study_client.optimal_trials():
-        optimal_trial = optimal_trial.materialize()
+    for trial in study.best_trials:
+        flops, loss = trial.values
+        params = trial.params
         print(
-            "Optimal Trial Suggestion and Objective:",
-            optimal_trial.parameters,
-            optimal_trial.final_measurement,
+            f"{trial.number:<8} {flops:>.2e}    {loss:.4f}        "
+            f"lr={params['learning_rate']:.1e}, "
+            f"layers={params['hidden_layers']}, "
+            f"dim={params['hidden_dim']}"
         )
 
 
