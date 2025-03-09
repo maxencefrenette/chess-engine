@@ -24,6 +24,7 @@ training = [
     "watchdog>=6.0.0",
     "tqdm>=4.65.0,<5.0.0",
     "optuna>=4.2.1",
+    "optuna-dashboard>=0.17.0",
 ]
 
 [tool.uv]
