@@ -1,4 +1,5 @@
 import os
+from math import log2
 from pathlib import Path
 
 import optuna
@@ -10,7 +11,7 @@ from src.training.train import train
 
 load_dotenv(Path(__file__).parents[3] / ".env")
 
-num_trials = 10
+num_trials = 5
 experiment_name = "tune"
 
 
@@ -32,9 +33,9 @@ def objective(trial: optuna.Trial) -> float:
     config = {
         "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-1, log=True),
         "hidden_layers": trial.suggest_int("hidden_layers", 1, 10),
-        "hidden_dim": trial.suggest_categorical("hidden_dim", [4, 8, 16, 32]),
+        "hidden_dim": 2 ** trial.suggest_int("log2_hidden_dim", 2, 6),
         "batch_size": 32,
-        "steps": 500,
+        "steps": trial.suggest_int("steps", 100, 1000, log=True),
         "accelerator": "cpu",
     }
 
@@ -54,7 +55,6 @@ def objective(trial: optuna.Trial) -> float:
     results = read_trial_results(experiment_name, trial_num)
     train_value_loss = results.iloc[-1]["train_value_loss"]
     flops = results.iloc[-1]["flops"]
-    print(f"Trial {trial_num} completed with train_value_loss: {train_value_loss:.3f}")
 
     return flops, train_value_loss
 
@@ -75,14 +75,17 @@ def main():
     print("Trial    FLOPS           Train Loss    Parameters")
     print("-" * 70)
 
-    for trial in study.best_trials:
+    best_trials = study.best_trials
+    best_trials = sorted(best_trials, key=lambda x: x.values[0])
+
+    for trial in best_trials:
         flops, loss = trial.values
         params = trial.params
         print(
             f"{trial.number:<8} {flops:>.2e}    {loss:.4f}        "
             f"lr={params['learning_rate']:.1e}, "
             f"layers={params['hidden_layers']}, "
-            f"dim={params['hidden_dim']}"
+            f"dim={2**params['log2_hidden_dim']}"
         )
 
 
