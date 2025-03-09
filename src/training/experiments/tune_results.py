@@ -25,8 +25,9 @@ def _(optuna, os):
     study = optuna.load_study(study_name="tune_v2", storage=f"sqlite:///{db_path}")
 
     df = study.trials_dataframe()
-    df = df.rename(columns={"values_0": "flops", "values_1": "loss"})
     df = df[df["state"] == "COMPLETE"]
+    df = df.rename(columns={"values_0": "flops", "values_1": "loss"})
+    df["params_hidden_dim"] = 2 ** df["params_log2_hidden_dim"]
     df
     return db_path, df, study
 
@@ -54,6 +55,9 @@ def _(alt, df, mo, np):
 
     df_pareto = pareto_frontier(df, ["flops", "loss"], maximize=False)
 
+    # Drop first element because it doesn't follow the trend
+    df_pareto = df_pareto.iloc[2:].reset_index(drop=True)
+
     chart = (
         alt.Chart(df_pareto)
         .mark_point()
@@ -67,6 +71,9 @@ def _(alt, df, mo, np):
             tooltip=[
                 alt.Tooltip("flops", format=".1e"),
                 alt.Tooltip("loss", format=".3f"),
+                "params_steps",
+                "params_hidden_layers",
+                "params_hidden_dim",
             ],
         )
         .properties(width=500, height=500)
