@@ -30,6 +30,8 @@ class Model(L.LightningModule):
         self.input_dim = 780
         self.output_dim = 3
 
+        self.train_value_loss_ema = None
+
         # Model
         self.model = nn.Sequential(
             nn.Linear(self.input_dim, self.hparams.hidden_dim),  # input layer
@@ -46,6 +48,12 @@ class Model(L.LightningModule):
         y_hat = self.model(features)
         loss = nn.functional.cross_entropy(y_hat, wdl)
         self.log("train_value_loss", loss)
+
+        if self.train_value_loss_ema is None:
+            self.train_value_loss_ema = loss
+        else:
+            self.train_value_loss_ema = 0.95 * self.train_value_loss_ema + 0.05 * loss
+        self.log("train_value_loss_ema", self.train_value_loss_ema)
 
         return loss
 

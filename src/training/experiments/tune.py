@@ -13,7 +13,7 @@ from src.training.train import train
 load_dotenv(Path(__file__).parents[3] / ".env")
 
 num_trials = 5
-experiment_name = "tune"
+experiment_name = "tune_v2"
 
 
 def read_trial_results(experiment_name: str, version: int) -> pd.DataFrame:
@@ -34,9 +34,9 @@ def objective(trial: optuna.Trial) -> float:
     config = {
         "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-1, log=True),
         "hidden_layers": trial.suggest_int("hidden_layers", 1, 10),
-        "hidden_dim": 2 ** trial.suggest_int("log2_hidden_dim", 2, 6),
+        "hidden_dim": 2 ** trial.suggest_int("log2_hidden_dim", 3, 7),
         "batch_size": 32,
-        "steps": trial.suggest_int("steps", 1000, 20000, log=True),
+        "steps": trial.suggest_int("steps", 5000, 20000, log=True),
         "accelerator": "cpu",
     }
 
@@ -54,7 +54,7 @@ def objective(trial: optuna.Trial) -> float:
 
     # Get the results
     results = read_trial_results(experiment_name, trial_num)
-    train_value_loss = results.iloc[-1]["train_value_loss"]
+    train_value_loss = results.iloc[-1]["train_value_loss_ema"]
     flops = results.iloc[-1]["flops"]
 
     return flops, train_value_loss
