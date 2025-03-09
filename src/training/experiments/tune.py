@@ -73,10 +73,16 @@ def main():
     args = parser.parse_args()
 
     # Create a new study
+    storage = optuna.storages.RDBStorage(
+        url=f"sqlite:///{os.getenv('OPTUNA_DB_PATH')}",
+        heartbeat_interval=60,
+        grace_period=300,
+    )
+
     study = optuna.create_study(
         study_name=experiment_name,
         directions=["minimize", "minimize"],  # For flops and train_value_loss
-        storage=f"sqlite:///{os.getenv('OPTUNA_DB_PATH')}",
+        storage=storage,
         load_if_exists=True,
     )
 
