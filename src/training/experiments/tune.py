@@ -1,3 +1,4 @@
+import argparse
 import os
 from math import log2
 from pathlib import Path
@@ -60,6 +61,16 @@ def objective(trial: optuna.Trial) -> float:
 
 
 def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Run hyperparameter optimization")
+    parser.add_argument(
+        "--num-trials",
+        type=int,
+        default=num_trials,
+        help=f"Number of trials to run (default: {num_trials})",
+    )
+    args = parser.parse_args()
+
     # Create a new study
     study = optuna.create_study(
         study_name=experiment_name,
@@ -69,7 +80,7 @@ def main():
     )
 
     # Run the optimization
-    study.optimize(objective, n_trials=num_trials)
+    study.optimize(objective, n_trials=args.num_trials)
 
     print("\nPareto Frontier:")
     print("Trial    FLOPS           Train Loss    Parameters")
@@ -87,6 +98,10 @@ def main():
             f"layers={params['hidden_layers']}, "
             f"dim={2**params['log2_hidden_dim']}"
         )
+
+    print(
+        f"\nCompleted {args.num_trials} trials for experiment '{args.experiment_name}'."
+    )
 
 
 if __name__ == "__main__":
