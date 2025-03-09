@@ -87,7 +87,7 @@ def main():
     )
 
     # Run the optimization
-    study.optimize(objective, n_trials=args.num_trials)
+    study.optimize(objective, n_trials=len(study.trials) + args.num_trials)
 
     print("\nPareto Frontier:")
     print("Trial    FLOPS           Train Loss    Parameters")
