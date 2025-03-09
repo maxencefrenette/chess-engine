@@ -13,7 +13,7 @@ from src.training.train import train
 load_dotenv(Path(__file__).parents[3] / ".env")
 
 num_trials = 5
-experiment_name = "tune_v2"
+experiment_name = "tune_v3"
 
 
 def read_trial_results(experiment_name: str, version: int) -> pd.DataFrame:
@@ -32,11 +32,12 @@ def objective(trial: optuna.Trial) -> float:
     """Objective function for Optuna optimization."""
     # Define the hyperparameters to optimize
     config = {
-        "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-1, log=True),
         "hidden_layers": trial.suggest_int("hidden_layers", 1, 10),
         "hidden_dim": 2 ** trial.suggest_int("log2_hidden_dim", 3, 7),
         "batch_size": 32,
         "steps": trial.suggest_int("steps", 5000, 20000, log=True),
+        "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-1, log=True),
+        "lr_cooldown_fraction": trial.suggest_float("lr_cooldown_fraction", 0.0, 0.6),
         "accelerator": "cpu",
     }
 
