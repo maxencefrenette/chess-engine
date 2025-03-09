@@ -28,6 +28,7 @@ def _(optuna, os):
     df = df[df["state"] == "COMPLETE"]
     df = df.rename(columns={"values_0": "flops", "values_1": "loss"})
     df["params_hidden_dim"] = 2 ** df["params_log2_hidden_dim"]
+    df["cpu_seconds"] = df["duration"].dt.total_seconds()
     df
     return db_path, df, study
 
@@ -74,6 +75,7 @@ def _(alt, df, mo, np):
                 "params_steps",
                 "params_hidden_layers",
                 "params_hidden_dim",
+                "cpu_seconds",
             ],
         )
         .properties(width=500, height=500)
