@@ -36,7 +36,7 @@ def objective(trial: optuna.Trial) -> float:
         "hidden_layers": trial.suggest_int("hidden_layers", 1, 10),
         "hidden_dim": 2 ** trial.suggest_int("log2_hidden_dim", 2, 6),
         "batch_size": 32,
-        "steps": trial.suggest_int("steps", 100, 1000, log=True),
+        "steps": trial.suggest_int("steps", 1000, 20000, log=True),
         "accelerator": "cpu",
     }
 
@@ -99,9 +99,7 @@ def main():
             f"dim={2**params['log2_hidden_dim']}"
         )
 
-    print(
-        f"\nCompleted {args.num_trials} trials for experiment '{args.experiment_name}'."
-    )
+    print(f"\nCompleted {args.num_trials} trials for experiment '{experiment_name}'.")
 
 
 if __name__ == "__main__":
