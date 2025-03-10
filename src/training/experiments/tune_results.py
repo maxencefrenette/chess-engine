@@ -13,28 +13,31 @@ def _(__file__):
     import marimo as mo
     import numpy as np
     import optuna
+    import pandas as pd
     from dotenv import load_dotenv
+    from scipy.optimize import curve_fit
 
     load_dotenv(Path(__file__).parents[3] / ".env")
-    return Path, alt, load_dotenv, mo, np, optuna, os
+    return Path, alt, curve_fit, load_dotenv, mo, np, optuna, os, pd
 
 
 @app.cell
 def _(optuna, os):
     db_path = os.getenv("OPTUNA_DB_PATH")
-    study = optuna.load_study(study_name="tune_v2", storage=f"sqlite:///{db_path}")
+    study = optuna.load_study(study_name="tune_v3", storage=f"sqlite:///{db_path}")
 
     df = study.trials_dataframe()
     df = df[df["state"] == "COMPLETE"]
     df = df.rename(columns={"values_0": "flops", "values_1": "loss"})
     df["params_hidden_dim"] = 2 ** df["params_log2_hidden_dim"]
     df["cpu_seconds"] = df["duration"].dt.total_seconds()
+    df["steps/s"] = df["params_steps"] / df["cpu_seconds"]
     df
     return db_path, df, study
 
 
 @app.cell
-def _(alt, df, mo, np):
+def _(curve_fit, df, np):
     def pareto_frontier(df, cols, maximize=True):
         data = df[cols].values
         if not maximize:
@@ -56,9 +59,22 @@ def _(alt, df, mo, np):
 
     df_pareto = pareto_frontier(df, ["flops", "loss"], maximize=False)
 
-    # Drop first element because it doesn't follow the trend
-    df_pareto = df_pareto.iloc[2:].reset_index(drop=True)
+    # Drop outliers from the start and end of the pareto frontier
+    df_pareto = df_pareto.iloc[1:].reset_index(drop=True)
 
+    def L(flops, C_c, alpha_c):
+        return C_c * flops**alpha_c
+
+    popt, pconv = curve_fit(
+        L, df_pareto["flops"], df_pareto["loss"], bounds=([0.0, -1.0], [100, 0.0])
+    )
+    popt
+    return L, df_pareto, pareto_frontier, pconv, popt
+
+
+@app.cell
+def _(L, alt, df_pareto, mo, np, pd, popt):
+    # Plot points of the pareto front
     chart = (
         alt.Chart(df_pareto)
         .mark_point()
@@ -75,14 +91,35 @@ def _(alt, df, mo, np):
                 "params_steps",
                 "params_hidden_layers",
                 "params_hidden_dim",
-                "cpu_seconds",
+                "params_lr_cooldown_fraction",
+                "steps/s",
             ],
         )
         .properties(width=500, height=500)
     )
 
-    mo.ui.altair_chart(chart)
-    return chart, df_pareto, pareto_frontier
+    # Plot the regression
+    flops = np.geomspace(df_pareto["flops"].min(), df_pareto["flops"].max())
+    loss = L(flops, *popt)
+    df_regression = pd.DataFrame({"flops": flops, "loss": loss})
+
+    chart_regression = (
+        alt.Chart(df_regression)
+        .mark_line(color="black", strokeDash=[5, 5])
+        .encode(x="flops", y="loss")
+    )
+
+    mo.ui.altair_chart(chart + chart_regression)
+    return chart, chart_regression, df_regression, flops, loss
+
+
+@app.cell
+def _(L, mo, popt):
+    mo.md(
+        f"Loss after 1e17 flops: {L(1e17, *popt):.2f}<br>"
+        f"Loss after 1e18 flops: {L(1e18, *popt):.2f}"
+    )
+    return
 
 
 if __name__ == "__main__":

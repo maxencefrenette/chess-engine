@@ -167,6 +167,7 @@ dependencies = [
     { name = "pytest" },
     { name = "python-chess" },
     { name = "python-dotenv" },
+    { name = "scipy" },
     { name = "torch" },
 ]
 
@@ -191,6 +192,7 @@ requires-dist = [
     { name = "pytest", specifier = ">=8.3.4,<9.0.0" },
     { name = "python-chess", specifier = ">=1.999,<2.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
+    { name = "scipy", specifier = ">=1.15.2" },
     { name = "torch", specifier = ">=2.6.0,<3.0.0" },
 ]
 
