@@ -39,7 +39,7 @@ def train(
     )
     trainer = L.Trainer(
         max_steps=config["steps"],
-        log_every_n_steps=max(1, config["steps"] // 1000),
+        log_every_n_steps=max(1, config["steps"] // 2000),
         logger=csv_logger,
         enable_model_summary=not verbose,
         callbacks=[flops_logger] + extra_callbacks,
