@@ -6,6 +6,7 @@ a0lite.log
 # Training artifacts
 lightning_logs/
 *.ckpt
+tuning_logs/
 
 .env
 
