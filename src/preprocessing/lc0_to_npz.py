@@ -18,6 +18,8 @@ from typing import BinaryIO, Tuple
 import numpy as np
 from tqdm import tqdm
 
+CHUNK_SIZE = 2**17
+
 # Define constants for LC0 chunk format
 V6_VERSION = struct.pack("i", 6)
 V5_VERSION = struct.pack("i", 5)
@@ -284,11 +286,12 @@ class LeelaChunkParser:
 
 def process_tar_archive(tar_path: str, output_dir: Path) -> None:
     """
-    Process a tar archive containing LC0 chunk files (.gz files) and output a single NPZ file.
+    Process a tar archive containing LC0 chunk files (.gz files) and output NPZ files.
+    The data is shuffled at the tar file level, then split into chunks of CHUNK_SIZE positions.
 
     Args:
         tar_path: Path to the tar archive containing .gz files
-        output_dir: Directory to save the combined NPZ file
+        output_dir: Directory to save the chunked NPZ files
     """
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -302,11 +305,10 @@ def process_tar_archive(tar_path: str, output_dir: Path) -> None:
         print(f"Not a valid tar file: {tar_path}")
         return
 
-    # Create output filename from the tar filename
+    # Create base output filename from the tar filename
     tar_base_name = os.path.basename(tar_path)
     if tar_base_name.endswith(".tar"):
         tar_base_name = tar_base_name[:-4]
-    output_path = output_dir / f"{tar_base_name}.npz"
 
     # Accumulators for all features and best_q values
     all_features = []
@@ -358,10 +360,24 @@ def process_tar_archive(tar_path: str, output_dir: Path) -> None:
             shuffled_features = combined_features[indices]
             shuffled_best_q = combined_best_q[indices]
 
-            # Save as a single NPZ file with shuffled data
-            np.savez_compressed(
-                output_path, features=shuffled_features, best_q=shuffled_best_q
-            )
+            # Calculate how many chunks we'll create
+            num_chunks = (num_samples + CHUNK_SIZE - 1) // CHUNK_SIZE
+
+            # Save data in chunks of CHUNK_SIZE
+            for chunk_idx in tqdm(range(num_chunks), desc="Saving chunks", leave=False):
+                start_idx = chunk_idx * CHUNK_SIZE
+                end_idx = min(start_idx + CHUNK_SIZE, num_samples)
+
+                chunk_features = shuffled_features[start_idx:end_idx]
+                chunk_best_q = shuffled_best_q[start_idx:end_idx]
+
+                # Create output filename with chunk index
+                output_path = output_dir / f"{tar_base_name}_chunk{chunk_idx}.npz"
+
+                # Save as NPZ file
+                np.savez_compressed(
+                    output_path, features=chunk_features, best_q=chunk_best_q
+                )
 
 
 def process_tar_archives(input_pattern: str, output_dir: Path) -> None:
