@@ -29,14 +29,14 @@ def read_trial_results(experiment_name: str, version: int) -> pd.DataFrame:
     return pd.read_csv(metrics_path)
 
 
-def objective(trial: optuna.Trial) -> float:
+def objective(trial: optuna.Trial) -> tuple[float, float]:
     """Objective function for Optuna optimization."""
     # Define the hyperparameters to optimize
     config = {
         "hidden_layers": trial.suggest_int("hidden_layers", 1, 10),
         "hidden_dim": 2 ** trial.suggest_int("log2_hidden_dim", 3, 8),
         "batch_size": 32,
-        "steps": trial.suggest_int("steps", 500, 1000, log=True),
+        "steps": trial.suggest_int("steps", 5000, 100000, log=True),
         "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-1, log=True),
         "lr_cooldown_fraction": trial.suggest_float("lr_cooldown_fraction", 0.0, 0.6),
         "accelerator": "cpu",
