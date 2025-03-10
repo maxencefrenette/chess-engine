@@ -73,7 +73,7 @@ def _(curve_fit, df, mo, np):
     df_pareto = pareto_frontier(df, ["flops", "loss"], maximize=False)
 
     # Drop outliers from the start and end of the pareto frontier
-    df_pareto = df_pareto.iloc[1:].reset_index(drop=True)
+    df_pareto = df_pareto.iloc[2:].reset_index(drop=True)
 
     def L(flops, C_c, alpha_c):
         return C_c * flops**alpha_c
@@ -107,6 +107,7 @@ def _(L, alt, df_pareto, mo, np, pd, popt):
                 "params_steps",
                 "params_hidden_layers",
                 "params_hidden_dim",
+                "params_learning_rate",
                 "params_lr_cooldown_fraction",
             ],
         )
