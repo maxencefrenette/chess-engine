@@ -18,13 +18,26 @@ def _(__file__):
     from scipy.optimize import curve_fit
 
     load_dotenv(Path(__file__).parents[3] / ".env")
-    return Path, alt, curve_fit, load_dotenv, mo, np, optuna, os, pd
+
+    study_name = "tune_v3"
+    return (
+        Path,
+        alt,
+        curve_fit,
+        load_dotenv,
+        mo,
+        np,
+        optuna,
+        os,
+        pd,
+        study_name,
+    )
 
 
 @app.cell
-def _(optuna, os):
+def _(optuna, os, study_name):
     db_path = os.getenv("OPTUNA_DB_PATH")
-    study = optuna.load_study(study_name="tune_v3", storage=f"sqlite:///{db_path}")
+    study = optuna.load_study(study_name=study_name, storage=f"sqlite:///{db_path}")
 
     df = study.trials_dataframe()
     df = df[df["state"] == "COMPLETE"]
@@ -60,7 +73,7 @@ def _(curve_fit, df, np):
     df_pareto = pareto_frontier(df, ["flops", "loss"], maximize=False)
 
     # Drop outliers from the start and end of the pareto frontier
-    df_pareto = df_pareto.iloc[1:].reset_index(drop=True)
+    df_pareto = df_pareto.iloc[5:].reset_index(drop=True)
 
     def L(flops, C_c, alpha_c):
         return C_c * flops**alpha_c
@@ -88,11 +101,12 @@ def _(L, alt, df_pareto, mo, np, pd, popt):
             tooltip=[
                 alt.Tooltip("flops", format=".1e"),
                 alt.Tooltip("loss", format=".3f"),
+                "number",
+                "steps/s",
                 "params_steps",
                 "params_hidden_layers",
                 "params_hidden_dim",
                 "params_lr_cooldown_fraction",
-                "steps/s",
             ],
         )
         .properties(width=500, height=500)
@@ -120,6 +134,51 @@ def _(L, mo, popt):
         f"Loss after 1e18 flops: {L(1e18, *popt):.2f}"
     )
     return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""# Single Trial Explorer""")
+    return
+
+
+@app.cell
+def _(df_pareto, mo):
+    dropdown = mo.ui.dropdown(options=df_pareto["number"].astype(str))
+    dropdown
+    return (dropdown,)
+
+
+@app.cell
+def _(alt, dropdown, mo, study_name):
+    from src.training.experiments.tune import read_trial_results
+
+    mo.stop(dropdown.value is None)
+
+    results = read_trial_results(study_name, int(dropdown.value))
+
+    chart_loss = (
+        alt.Chart(results)
+        .mark_line(opacity=0.3)
+        .encode(
+            x="step",
+            y=alt.Y("train_value_loss").scale(zero=False),
+        )
+        .properties(height=500)
+    )
+
+    chart_loss_ema = (
+        alt.Chart(results)
+        .mark_line()
+        .encode(
+            x="step",
+            y=alt.Y("train_value_loss_ema").scale(zero=False),
+        )
+        .properties(height=500)
+    )
+
+    mo.ui.altair_chart(chart_loss + chart_loss_ema)
+    return chart_loss, chart_loss_ema, read_trial_results, results
 
 
 if __name__ == "__main__":
