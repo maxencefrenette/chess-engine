@@ -4,6 +4,7 @@ from math import log2
 from pathlib import Path
 
 import optuna
+import optunahub
 import pandas as pd
 from dotenv import load_dotenv
 from lightning.pytorch.loggers import CSVLogger
@@ -79,9 +80,12 @@ def main():
         grace_period=300,
     )
 
+    module = optunahub.load_module(package="samplers/auto_sampler")
+
     study = optuna.create_study(
         study_name=experiment_name,
         directions=["minimize", "minimize"],  # For flops and train_value_loss
+        sampler=module.AutoSampler(),
         storage=storage,
         load_if_exists=True,
     )
