@@ -6,7 +6,10 @@ a0lite.log
 # Training artifacts
 lightning_logs/
 *.ckpt
+
+# tuning
 tuning_logs/
+optunahub/
 
 .env
 

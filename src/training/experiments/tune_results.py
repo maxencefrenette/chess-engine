@@ -19,7 +19,7 @@ def _(__file__):
 
     load_dotenv(Path(__file__).parents[3] / ".env")
 
-    study_name = "tune_v3"
+    study_name = "tune_v4"
     return (
         Path,
         alt,
@@ -50,7 +50,7 @@ def _(optuna, os, study_name):
 
 
 @app.cell
-def _(curve_fit, df, np):
+def _(curve_fit, df, mo, np):
     def pareto_frontier(df, cols, maximize=True):
         data = df[cols].values
         if not maximize:
@@ -73,7 +73,7 @@ def _(curve_fit, df, np):
     df_pareto = pareto_frontier(df, ["flops", "loss"], maximize=False)
 
     # Drop outliers from the start and end of the pareto frontier
-    df_pareto = df_pareto.iloc[5:].reset_index(drop=True)
+    df_pareto = df_pareto.iloc[1:].reset_index(drop=True)
 
     def L(flops, C_c, alpha_c):
         return C_c * flops**alpha_c
@@ -81,7 +81,8 @@ def _(curve_fit, df, np):
     popt, pconv = curve_fit(
         L, df_pareto["flops"], df_pareto["loss"], bounds=([0.0, -1.0], [100, 0.0])
     )
-    popt
+
+    mo.vstack([mo.md(f"$C_c = {popt[0]:.2f}$"), mo.md(f"$\\alpha_c = {popt[1]:.3f}$")])
     return L, df_pareto, pareto_frontier, pconv, popt
 
 
@@ -123,17 +124,17 @@ def _(L, alt, df_pareto, mo, np, pd, popt):
         .encode(x="flops", y="loss")
     )
 
-    mo.ui.altair_chart(chart + chart_regression)
-    return chart, chart_regression, df_regression, flops, loss
-
-
-@app.cell
-def _(L, mo, popt):
-    mo.md(
-        f"Loss after 1e17 flops: {L(1e17, *popt):.2f}<br>"
-        f"Loss after 1e18 flops: {L(1e18, *popt):.2f}"
+    mo.hstack(
+        [
+            mo.ui.altair_chart(chart + chart_regression),
+            mo.md(
+                f"Loss after 1e17 flops: {L(1e17, *popt):.2f}<br>"
+                f"Loss after 1e18 flops: {L(1e18, *popt):.2f}"
+            ),
+        ],
+        widths=[2, 1],
     )
-    return
+    return chart, chart_regression, df_regression, flops, loss
 
 
 @app.cell(hide_code=True)
