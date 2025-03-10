@@ -4,6 +4,8 @@ import torch.nn as nn
 from torch import optim
 from torch.optim.lr_scheduler import LambdaLR
 
+EMA_DECAY = 0.998
+
 
 class ResidualBlock(nn.Module):
     def __init__(self, hidden_dim):
@@ -65,7 +67,9 @@ class Model(L.LightningModule):
         if self.train_value_loss_ema is None:
             self.train_value_loss_ema = loss
         else:
-            self.train_value_loss_ema = 0.95 * self.train_value_loss_ema + 0.05 * loss
+            self.train_value_loss_ema = (
+                EMA_DECAY * self.train_value_loss_ema + (1 - EMA_DECAY) * loss
+            )
         self.log("train_value_loss_ema", self.train_value_loss_ema)
 
         return loss
