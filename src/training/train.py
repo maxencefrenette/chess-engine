@@ -25,6 +25,7 @@ def train(
     csv_logger: Optional[CSVLogger] = None,
     accumulate_grad_batches: int = 1,
     extra_callbacks: list[L.Callback] = [],
+    max_time: Optional[int] = None,
 ) -> dict:
     # Initialize logger
     if csv_logger is None:
@@ -45,6 +46,7 @@ def train(
         callbacks=[flops_logger] + extra_callbacks,
         accelerator=config["accelerator"],
         accumulate_grad_batches=accumulate_grad_batches,
+        max_time=max_time,
     )
 
     trainer.fit(model, dataset)

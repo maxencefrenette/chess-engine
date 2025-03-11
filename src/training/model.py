@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch import optim
 from torch.optim.lr_scheduler import LambdaLR
 
-EMA_DECAY = 0.998
+EMA_DECAY = 0.999
 
 
 class ResidualBlock(nn.Module):

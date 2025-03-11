@@ -14,7 +14,7 @@ from src.training.train import train
 load_dotenv(Path(__file__).parents[3] / ".env")
 
 num_trials = 5
-experiment_name = "tune_v4"
+experiment_name = "tune_v5"
 
 
 def read_trial_results(experiment_name: str, version: int) -> pd.DataFrame:
@@ -35,7 +35,7 @@ def objective(trial: optuna.Trial) -> tuple[float, float]:
     config = {
         "hidden_layers": trial.suggest_int("hidden_layers", 1, 10),
         "hidden_dim": 2 ** trial.suggest_int("log2_hidden_dim", 3, 8),
-        "batch_size": 32,
+        "batch_size": 2 ** trial.suggest_int("log2_batch_size", 1, 7),
         "steps": trial.suggest_int("steps", 5000, 100000, log=True),
         "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-1, log=True),
         "lr_cooldown_fraction": trial.suggest_float("lr_cooldown_fraction", 0.0, 0.6),
@@ -52,7 +52,7 @@ def objective(trial: optuna.Trial) -> tuple[float, float]:
     trial.set_user_attr("logs_path", csv_logger.log_dir)
 
     # Train the model with these hyperparameters
-    train(config, csv_logger=csv_logger)
+    train(config, csv_logger=csv_logger, max_time={"minutes": 1})
 
     # Get the results
     results = read_trial_results(experiment_name, trial_num)
