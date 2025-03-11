@@ -35,7 +35,18 @@ def _(__file__):
 
 
 @app.cell
-def _(optuna, os, study_name):
+def _(mo):
+    refresh = mo.ui.refresh(
+        label="Refresh", options=["1m", "5m", "10m"], default_interval="5m"
+    )
+    refresh
+    return (refresh,)
+
+
+@app.cell
+def _(optuna, os, refresh, study_name):
+    refresh.value
+
     db_path = os.getenv("OPTUNA_DB_PATH")
     study = optuna.load_study(study_name=study_name, storage=f"sqlite:///{db_path}")
 
@@ -72,17 +83,27 @@ def _(curve_fit, df, mo, np):
 
     df_pareto = pareto_frontier(df, ["flops", "loss"], maximize=False)
 
-    # Drop outliers from the start and end of the pareto frontier
-    df_pareto = df_pareto.iloc[2:].reset_index(drop=True)
+    # Drop trials that were limited by the number of steps
+    df_pareto = df_pareto[df_pareto["params_steps"] > 6000]
+    df_pareto = df_pareto[df_pareto["params_steps"] < 90000]
 
-    def L(flops, C_c, alpha_c):
-        return C_c * flops**alpha_c
+    def L(flops, C_c, alpha_c, L_0):
+        return C_c * flops**alpha_c + L_0
 
     popt, pconv = curve_fit(
-        L, df_pareto["flops"], df_pareto["loss"], bounds=([0.0, -1.0], [100, 0.0])
+        L,
+        df_pareto["flops"],
+        df_pareto["loss"],
+        bounds=([0.0, -1.0, 0.0], [100, 0.0, 1.0]),
     )
 
-    mo.vstack([mo.md(f"$C_c = {popt[0]:.2f}$"), mo.md(f"$\\alpha_c = {popt[1]:.3f}$")])
+    mo.vstack(
+        [
+            mo.md(f"$C_c = {popt[0]:.2f}$"),
+            mo.md(f"$\\alpha_c = {popt[1]:.3f}$"),
+            mo.md(f"$L_0 = {popt[2]:.2f}$"),
+        ]
+    )
     return L, df_pareto, pareto_frontier, pconv, popt
 
 
@@ -97,12 +118,13 @@ def _(L, alt, df_pareto, mo, np, pd, popt):
             .axis(grid=False, format="e")
             .scale(type="log", nice=False, padding=20),
             y=alt.Y("loss")
-            .axis(grid=False, values=np.linspace(0, 1, 51))
-            .scale(type="log", nice=False, padding=20),
+            .axis(grid=False, tickCount=10)
+            .scale(nice=False, zero=False, padding=20),
             tooltip=[
                 alt.Tooltip("flops", format=".1e"),
                 alt.Tooltip("loss", format=".3f"),
                 "number",
+                "cpu_seconds",
                 "steps/s",
                 "params_steps",
                 "params_hidden_layers",
