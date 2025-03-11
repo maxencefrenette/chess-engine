@@ -19,7 +19,7 @@ def _(__file__):
 
     load_dotenv(Path(__file__).parents[3] / ".env")
 
-    study_name = "tune_v4"
+    study_name = "tune_v5"
     return (
         Path,
         alt,
@@ -53,6 +53,7 @@ def _(optuna, os, refresh, study_name):
     df = study.trials_dataframe()
     df = df[df["state"] == "COMPLETE"]
     df = df.rename(columns={"values_0": "flops", "values_1": "loss"})
+    df["params_batch_size"] = 2 ** df["params_log2_batch_size"]
     df["params_hidden_dim"] = 2 ** df["params_log2_hidden_dim"]
     df["cpu_seconds"] = df["duration"].dt.total_seconds()
     df["steps/s"] = df["params_steps"] / df["cpu_seconds"]
@@ -127,6 +128,7 @@ def _(L, alt, df_pareto, mo, np, pd, popt):
                 "cpu_seconds",
                 "steps/s",
                 "params_steps",
+                "params_batch_size",
                 "params_hidden_layers",
                 "params_hidden_dim",
                 "params_learning_rate",
