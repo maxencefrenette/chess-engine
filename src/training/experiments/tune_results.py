@@ -84,9 +84,13 @@ def _(curve_fit, df, mo, np):
 
     df_pareto = pareto_frontier(df, ["flops", "loss"], maximize=False)
 
-    # Drop trials that were limited by the number of steps
-    df_pareto = df_pareto[df_pareto["params_steps"] > 6000]
-    df_pareto = df_pareto[df_pareto["params_steps"] < 90000]
+    # Drop trials too close to the boundaries of hyperparameter space
+    # df_pareto = df_pareto[df_pareto["params_steps"] > df_pareto["params_steps"].quantile(0.05)]
+    # df_pareto = df_pareto[df_pareto["params_steps"] < df_pareto["params_steps"].quantile(0.95)]
+    # df_pareto = df_pareto[df_pareto["cpu_seconds"] < 59]
+    # df_pareto = df_pareto[df_pareto["params_batch_size"] != df_pareto["params_batch_size"].min()]
+    # df_pareto = df_pareto[df_pareto["params_batch_size"] != df_pareto["params_batch_size"].max()]
+    df_pareto = df_pareto[df_pareto["flops"] > 5e9]
 
     def L(flops, C_c, alpha_c, L_0):
         return C_c * flops**alpha_c + L_0
@@ -121,6 +125,7 @@ def _(L, alt, df_pareto, mo, np, pd, popt):
             y=alt.Y("loss")
             .axis(grid=False, tickCount=10)
             .scale(nice=False, zero=False, padding=20),
+            color="params_log2_batch_size",
             tooltip=[
                 alt.Tooltip("flops", format=".1e"),
                 alt.Tooltip("loss", format=".3f"),
@@ -157,7 +162,7 @@ def _(L, alt, df_pareto, mo, np, pd, popt):
                 f"Loss after 1e18 flops: {L(1e18, *popt):.2f}"
             ),
         ],
-        widths=[2, 1],
+        widths=[3, 1],
     )
     return chart, chart_regression, df_regression, flops, loss
 
