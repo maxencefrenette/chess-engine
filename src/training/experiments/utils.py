@@ -108,27 +108,3 @@ def run_single_experiment(experiment_name: str, trial_name: str, config: dict):
     )
 
     train(config, csv_logger=csv_logger)
-
-
-def run_experiments(experiment_name: str, experiment_arguments: list[tuple[str, dict]]):
-    """
-    Run multiple experiments in parallel.
-
-    Args:
-        experiment_name: Name of the experiment (e.g., "learning_rate", "batch_size")
-        experiment_arguments: List of tuples (trial_name, config) to run in parallel
-    """
-
-    # Set the maximum number of parallel experiments based on available CPU cores
-    max_workers = min(os.cpu_count() or 1, len(experiment_arguments), 4)
-
-    # Run experiments in parallel
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-        futures = [
-            executor.submit(run_single_experiment, experiment_name, trial_name, config)
-            for trial_name, config in experiment_arguments
-        ]
-
-        # Wait for all experiments to complete
-        for future in mo.status.progress_bar(concurrent.futures.as_completed(futures)):
-            future.result()

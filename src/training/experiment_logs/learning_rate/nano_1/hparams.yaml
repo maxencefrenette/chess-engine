@@ -1,6 +1,0 @@
-accelerator: cpu
-batch_size: 32
-hidden_dim: 32
-hidden_layers: 4
-learning_rate: 4.121471387649793e-06
-steps: 30000
