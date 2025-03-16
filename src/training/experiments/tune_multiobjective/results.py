@@ -182,7 +182,7 @@ def _(df_pareto, mo):
 
 @app.cell
 def _(alt, dropdown, mo, study_name):
-    from src.training.experiments.tune import read_trial_results
+    from src.training.experiments.utils import read_trial_results
 
     mo.stop(dropdown.value is None)
 

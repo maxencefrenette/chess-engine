@@ -12,7 +12,7 @@ from src.training.train import train
 
 def read_experiment_results(experiment_name: str) -> pd.DataFrame:
     """
-    Read experiment results from the experiment logs directory.
+    Read experiment results from the experiment logs directory. Used by the old non-optuna experiments.
 
     Args:
         experiment_name: Name of the experiment (e.g., "learning_rate", "batch_size", "steps")
@@ -68,6 +68,18 @@ def read_experiment_results(experiment_name: str) -> pd.DataFrame:
     results_df = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
 
     return results_df
+
+
+def read_trial_results(experiment_name: str, version: int) -> pd.DataFrame:
+    """Read a single trial result from the given path. Used by optuna experiments."""
+    metrics_path = (
+        Path(os.getenv("EXPERIMENT_LOGS_DIR"))
+        / experiment_name
+        / f"version_{version}"
+        / "metrics.csv"
+    )
+
+    return pd.read_csv(metrics_path)
 
 
 def smooth_column(
