@@ -8,6 +8,7 @@ as described in docs/training_data_format.md.
 """
 
 import argparse
+import glob
 import gzip
 import os
 import struct
@@ -15,8 +16,11 @@ import tarfile
 from pathlib import Path
 from typing import BinaryIO, Tuple
 
+import dotenv
 import numpy as np
 from tqdm import tqdm
+
+dotenv.load_dotenv()
 
 CHUNK_SIZE = 2**17
 
@@ -383,6 +387,7 @@ def process_tar_archive(tar_path: str, output_dir: Path) -> None:
 def process_tar_archives(input_pattern: str, output_dir: Path) -> None:
     """
     Process multiple tar archives matching a glob pattern.
+    Skips processing if output chunks already exist for a tar file.
 
     Args:
         input_pattern: Glob pattern to match tar archives (e.g., "/path/to/data/*.tar")
@@ -390,10 +395,6 @@ def process_tar_archives(input_pattern: str, output_dir: Path) -> None:
     """
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Get all matching tar files
-    import glob
-
     tar_files = glob.glob(input_pattern)
 
     if not tar_files:
@@ -404,23 +405,24 @@ def process_tar_archives(input_pattern: str, output_dir: Path) -> None:
 
     # Process each tar file sequentially
     for tar_path in tqdm(tar_files, desc="Processing tar archives"):
+        # Create base output filename from the tar filename
+        tar_base_name = os.path.basename(tar_path)
+        if tar_base_name.endswith(".tar"):
+            tar_base_name = tar_base_name[:-4]
+
+        # Check if any chunks from this tar file already exist
+        existing_chunks = list(output_dir.glob(f"{tar_base_name}_chunk*.npz"))
+        if existing_chunks:
+            continue
+
         process_tar_archive(tar_path=tar_path, output_dir=output_dir)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Convert LC0 training data from .tar archives to NPZ format"
-    )
-    parser.add_argument(
-        "input",
-        help='Glob pattern matching tar archives (e.g., "/path/to/data/*.tar")',
-    )
-    parser.add_argument("output", help="Output directory for NPZ files")
-    args = parser.parse_args()
+    input_pattern = os.getenv("LEELA_DATA_PATH")
+    output_dir = Path(os.getenv("TRAINING_DATA_PATH").removesuffix("/*.npz"))
 
-    output_dir = Path(args.output)
-
-    process_tar_archives(input_pattern=args.input, output_dir=output_dir)
+    process_tar_archives(input_pattern, output_dir)
 
 
 if __name__ == "__main__":
