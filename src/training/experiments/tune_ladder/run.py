@@ -33,10 +33,10 @@ if previous_flops_target_experiment is not None:
     ]
     best_trial = best_trials.nsmallest(1, "value").iloc[0]
 
-    hidden_layers = int(best_trial["params_hidden_layers"])
-    log2_hidden_dim = int(best_trial["params_log2_hidden_dim"])
-    log2_batch_size = int(best_trial["params_log2_batch_size"])
-    learning_rate = float(best_trial["params_learning_rate"])
+    previous_hidden_layers = int(best_trial["params_hidden_layers"])
+    previous_log2_hidden_dim = int(best_trial["params_log2_hidden_dim"])
+    previous_log2_batch_size = int(best_trial["params_log2_batch_size"])
+    previous_learning_rate = float(best_trial["params_learning_rate"])
 
 
 def objective(trial: optuna.Trial) -> tuple[float, float]:
@@ -45,18 +45,25 @@ def objective(trial: optuna.Trial) -> tuple[float, float]:
     if previous_flops_target_experiment is not None:
         config = {
             "hidden_layers": trial.suggest_int(
-                "hidden_layers", hidden_layers, hidden_layers + 1
+                "hidden_layers", previous_hidden_layers, previous_hidden_layers + 1
             ),
             "hidden_dim": 2
             ** trial.suggest_int(
-                "log2_hidden_dim", log2_hidden_dim, log2_hidden_dim + 1
+                "log2_hidden_dim",
+                previous_log2_hidden_dim,
+                previous_log2_hidden_dim + 1,
             ),
             "batch_size": 2
             ** trial.suggest_int(
-                "log2_batch_size", log2_batch_size, log2_batch_size + 1
+                "log2_batch_size",
+                previous_log2_batch_size,
+                previous_log2_batch_size + 1,
             ),
             "learning_rate": trial.suggest_float(
-                "learning_rate", learning_rate * 0.5, learning_rate * 2, log=True
+                "learning_rate",
+                previous_learning_rate * 0.5,
+                previous_learning_rate * 2,
+                log=True,
             ),
             "lr_cooldown_fraction": 0.4,
             "accelerator": "gpu",
@@ -118,11 +125,11 @@ def main():
     else:
         search_space = {
             "learning_rate": np.geomspace(
-                learning_rate * 0.5, learning_rate * 2, 5
+                previous_learning_rate * 0.5, previous_learning_rate * 2, 5
             ).tolist(),
-            "hidden_layers": [hidden_layers, hidden_layers + 1],
-            "log2_hidden_dim": [log2_hidden_dim, log2_hidden_dim + 1],
-            "log2_batch_size": [log2_batch_size, log2_batch_size + 1],
+            "hidden_layers": [previous_hidden_layers, previous_hidden_layers + 1],
+            "log2_hidden_dim": [previous_log2_hidden_dim, previous_log2_hidden_dim + 1],
+            "log2_batch_size": [previous_log2_batch_size, previous_log2_batch_size + 1],
         }
         sampler = optuna.samplers.GridSampler(search_space)
 
