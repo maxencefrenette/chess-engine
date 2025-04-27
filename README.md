@@ -5,13 +5,25 @@ This is an unfinished toy chess engine that uses deep learning. I don't have a n
 ## Project Structure
 
 - `benchmarks/`: Scripts to benchmark the elo of the engine.
-- `docs/`: The documentation.
+ - `docs/`: Project documentation (see [docs/index.md](docs/index.md)).
 - `src/engine/`: The engine code.
 - `src/training/`: The model definition and training pipeline.
 
-## Running the code
+ .
+ ├── benchmarks/            # Elo benchmarking scripts
+ ├── docs/                  # Project documentation
+ ├── src/                   # Source code
+ │   ├── preprocessing/     # LC0 to .npz conversion scripts
+ │   ├── engine/            # Chess engine implementation
+ │   └── training/          # Model definition and training pipeline
+ ├── tests/                 # Unit and integration tests
+ └── Other directories (checkpoints, dist, optunahub) for ancillary data and packages.
 
-- Engine: `uv run engine`
+ ## Running the Code
+
+ - Engine: `uv run engine`
+
+   For full usage details, see [docs/usage.md](docs/usage.md).
 - Training
   - `uv run train_debug`
   - `uv run train_pico`
