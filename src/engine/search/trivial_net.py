@@ -5,6 +5,17 @@ import torch
 
 from src.training.model import Model
 
+# constants for board_to_features
+PIECE_MAPPING = {
+    chess.PAWN: "P",
+    chess.KNIGHT: "N",
+    chess.BISHOP: "B",
+    chess.ROOK: "R",
+    chess.QUEEN: "Q",
+    chess.KING: "K",
+}
+PIECE_ENCODING = "PNBRQKpnbrqk"
+
 
 def board_to_features(board: chess.Board) -> torch.Tensor:  # [772]
     """
@@ -18,23 +29,14 @@ def board_to_features(board: chess.Board) -> torch.Tensor:  # [772]
     castling_tensor = torch.zeros((1, 4), dtype=torch.float32)
 
     # Map pieces to board tensor
-    mapping = {
-        chess.PAWN: "P",
-        chess.KNIGHT: "N",
-        chess.BISHOP: "B",
-        chess.ROOK: "R",
-        chess.QUEEN: "Q",
-        chess.KING: "K",
-    }
-    piece_encoding = "PNBRQKpnbrqk"
     side_to_move = board.turn
     for square, piece in board.piece_map().items():
         letter = (
-            mapping[piece.piece_type]
+            PIECE_MAPPING[piece.piece_type]
             if piece.color == side_to_move
-            else mapping[piece.piece_type].lower()
+            else PIECE_MAPPING[piece.piece_type].lower()
         )
-        channel = piece_encoding.index(letter)
+        channel = PIECE_ENCODING.index(letter)
         rank = chess.square_rank(square)
         file = chess.square_file(square)
 
