@@ -17,10 +17,11 @@ PIECE_MAPPING = {
 PIECE_ENCODING = "PNBRQKpnbrqk"
 
 
-def board_to_features(board: chess.Board) -> torch.Tensor:  # [772]
+def board_to_features(board: chess.Board) -> torch.Tensor:  # [780]
     """
     Convert a chess board to a 1-hot tensor of features.
-    Includes both piece positions (12x8x8=768) and castling rights (4) for a total of 772 features.
+    Includes piece positions (12x8x8=768), castling rights (4), and en-passant target file (8)
+    for a total of 780 features.
     The board is always viewed from the perspective of the side to move.
     When it's Black's turn, the board is rotated 180 degrees.
     """
@@ -53,11 +54,26 @@ def board_to_features(board: chess.Board) -> torch.Tensor:  # [772]
     castling_tensor[0, 2] = float(board.has_kingside_castling_rights(not side_to_move))
     castling_tensor[0, 3] = float(board.has_queenside_castling_rights(not side_to_move))
 
-    # Flatten and concatenate
-    return torch.cat([tensor.flatten(), castling_tensor.flatten()])
+    # En-passant target file for the side to move: one-hot over 8 files
+    enpassant_tensor = torch.zeros((8,), dtype=torch.float32)
+    if board.has_legal_en_passant():
+        ep_file = chess.square_file(board.ep_square)
+        # Rotate file for Black's perspective
+        if not side_to_move:
+            ep_file = 7 - ep_file
+        enpassant_tensor[ep_file] = 1.0
+
+    # Flatten and concatenate: pieces, castling, en-passant
+    return torch.cat(
+        [
+            tensor.flatten(),
+            castling_tensor.flatten(),
+            enpassant_tensor.flatten(),
+        ]
+    )
 
 
-class TrivialNet:
+class NeuralNet:
     def __init__(self, model_path: Path):
         self.model = Model.load_from_checkpoint(model_path)
         self.model.eval()
@@ -96,6 +112,13 @@ class TrivialNet:
         """
         Evaluate the expected value of a position using the neural network.
         """
+        # Convert board to feature vector and move to model's device
         features = board_to_features(board)
+        # Ensure input tensor is on same device as model parameters
+        device = next(self.model.parameters()).device
+        features = features.to(device)
+        # Forward pass (no grad)
         wdl = self.model.predict(features)
-        return torch.dot(torch.tensor([1.0, 0.0, -1.0]), wdl).item()
+        # Dot with [1,0,-1] on same device and return scalar
+        weight = torch.tensor([1.0, 0.0, -1.0], device=device)
+        return torch.dot(weight, wdl).item()

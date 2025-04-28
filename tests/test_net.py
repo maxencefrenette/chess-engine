@@ -1,7 +1,7 @@
 import chess
 import torch
 
-from src.engine.search.trivial_net import board_to_features
+from src.engine.search.neural_net import board_to_features
 
 
 def test_board_to_features():
@@ -11,7 +11,7 @@ def test_board_to_features():
 
     # Test shape
     assert isinstance(features, torch.Tensor)
-    assert features.shape == (772,)  # 12x8x8 + 4 castling rights
+    assert features.shape == (780,)  # 12x8x8 + 4 castling rights + 8 en-passant files
 
     # Test piece positions for starting position (White to move)
     piece_features = features[:768].reshape(12, 8, 8)
@@ -23,7 +23,7 @@ def test_board_to_features():
     assert piece_features[6, 6].sum() == 8  # All black pawns on rank 7
 
     # Test castling rights
-    castling_rights = features[768:]
+    castling_rights = features[768:772]
     assert castling_rights.tolist() == [
         1.0,
         1.0,

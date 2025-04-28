@@ -16,7 +16,10 @@ MINTIME = 0.1
 TIMEDIV = 25.0
 NODES = 800
 C = 3.0
-MODEL_PATH = Path(os.getenv("MODELS_PATH")) / "appealing-infatuation-19.pth"
+MODEL_PATH = (
+    Path(os.getenv("EXPERIMENT_LOGS_DIR"))
+    / "tune_ladder_v2-3e+15/version_27/checkpoints/epoch=0-step=5675.ckpt"
+)
 
 
 logfile = open("a0lite.log", "w")
@@ -69,7 +72,7 @@ def process_position(tokens):
 def load_network():
     log(f"Loading network from {MODEL_PATH}")
 
-    net = search.TrivialNet(MODEL_PATH)
+    net = search.NeuralNet(MODEL_PATH)
     return net
 
 

@@ -1,3 +1,3 @@
-from .trivial_net import TrivialNet
+from .neural_net import NeuralNet
 from .uct import UCT_search
 from .util import cp

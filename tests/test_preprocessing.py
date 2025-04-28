@@ -27,7 +27,7 @@ def test_lc0_to_npz_integration():
         process_tar_archive(tar_path=str(test_tar_path), output_dir=output_dir)
 
         # Verify output file exists
-        output_path = output_dir / "lc0-data-sample.npz"
+        output_path = output_dir / "lc0-data-sample_chunk0.npz"
         assert output_path.exists(), "Output file was not created"
 
         # Load and verify the data
@@ -69,7 +69,8 @@ def test_lc0_to_npz_integration():
 
     finally:
         # Clean up
-        shutil.rmtree(temp_dir)
+        # shutil.rmtree(temp_dir)
+        pass
 
 
 if __name__ == "__main__":
