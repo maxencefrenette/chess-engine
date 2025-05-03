@@ -145,10 +145,11 @@ def main():
             send("bestmove {}".format(best))
 
 
-try:
-    main()
-except:
-    exc_type, exc_value, exc_tb = sys.exc_info()
-    log(traceback.format_exception(exc_type, exc_value, exc_tb))
-
-logfile.close()
+if __name__ == "__main__":
+    try:
+        main()
+    except:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        log(traceback.format_exception(exc_type, exc_value, exc_tb))
+    # Close the log file when exiting the script
+    logfile.close()
