@@ -51,7 +51,6 @@ conflicts = [
 [tool.uv.sources]
 torch = [
   { index = "pytorch-cpu", extra = "cpu" },
-  #{ index = "pypi", extra = "default" },
 ]
 
 [[tool.uv.index]]
