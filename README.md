@@ -2,6 +2,11 @@
 
 This is an unfinished toy chess engine that uses deep learning. I don't have a name for it yet. It is loosely based on Leela Chess Zero and trains on Leela Chess Zero's training data (supervised learning).
 
+## Installation
+
+- CPU-only mode: `uv sync --group cpu`
+- GPU mode (installs torch from pypi): `uv sync --group gpu`
+
 ## Project Structure
 
 - `benchmarks/`: Scripts to benchmark the elo of the engine.
