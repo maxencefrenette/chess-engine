@@ -3,7 +3,7 @@
 These rules guide how LLM-based contributors should interact with and modify this project.
 
 ## Editing these rules
-To edit these rules, use the `llm-rules.md` file in the root directory of the project. If something is unclear or missing, please ask the user to clarify it. Then, modify `llm-rules.md` to reflect the new rules.
+If something is unclear or missing, please ask the user to clarify it. Then, modify `AGENTS.md` to reflect the new rules. If the user corrects you on a misunderstanding, update `AGENTS.md` to avoid making the same mistake again.
 
 ## Code Style
 
