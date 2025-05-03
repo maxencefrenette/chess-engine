@@ -20,7 +20,7 @@ To edit these rules, use the `llm-rules.md` file in the root directory of the pr
 
 ## Testing
 
-- Run the full test suite: `uv run pytest`
+- Never run tests using `pytest` instead, use `uv run pytest`
 - Run a single test: `uv run pytest tests/test_net.py::test_board_to_features -v`
 - Run tests by expression: `uv run pytest -k "board_to_features"`
 
