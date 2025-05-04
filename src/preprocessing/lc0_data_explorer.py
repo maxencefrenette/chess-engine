@@ -5,12 +5,23 @@ app = marimo.App(width="medium")
 
 
 @app.cell
-def load_ui():
-    """UI to select the LC0 .tar archive file"""
+def imports():
+    import sys
+    import tarfile
     from pathlib import Path
 
+    import chess
     import marimo as mo
+    import numpy as np
 
+    from src.preprocessing.lc0_to_npz import LeelaChunkParser
+
+    return LeelaChunkParser, Path, chess, mo, sys, tarfile
+
+
+@app.cell
+def load_ui(Path, mo):
+    """UI to select the LC0 .tar archive file"""
     # Default sample tar in tests/test_data
     default_tar = (
         Path(__file__).parents[2] / "tests" / "test_data" / "lc0-data-sample.tar"
@@ -21,16 +32,12 @@ def load_ui():
         placeholder="Enter path to .tar file containing LC0 chunks",
     )
     file_path
-    return file_path, mo
+    return (file_path,)
 
 
 @app.cell
-def list_chunks(file_path):
+def list_chunks(Path, file_path, sys, tarfile):
     """List LC0 chunk (.gz) files in the .tar archive"""
-    import sys
-    import tarfile
-    from pathlib import Path as _P
-
     # Determine input path (UI or CLI)
     path = file_path.value or (sys.argv[1] if len(sys.argv) > 1 else None)
     if not path or not tarfile.is_tarfile(path):
@@ -43,7 +50,7 @@ def list_chunks(file_path):
             for member in tar.getmembers():
                 if not member.isfile():
                     continue
-                name = _P(member.name).name
+                name = Path(member.name).name
                 # Only consider gz chunk files
                 if not name.endswith(".gz") or name.startswith("._"):
                     continue
@@ -51,7 +58,7 @@ def list_chunks(file_path):
         return chunk_names
 
     chunk_names = get_chunk_names(path)
-    return chunk_names, path, tarfile
+    return chunk_names, path
 
 
 @app.cell
@@ -67,19 +74,13 @@ def select_chunk(chunk_names, mo):
 
 
 @app.cell
-def parse_chunk(chunk, path, tarfile):
+def parse_chunk(LeelaChunkParser, Path, chunk, path, tarfile):
     """Parse the selected chunk file into features and Qs"""
-    from pathlib import Path as _P
-
-    import numpy as np
-
-    from src.preprocessing.lc0_to_npz import LeelaChunkParser
-
     with tarfile.open(path) as tar:
         for member in tar.getmembers():
             if not member.isfile():
                 continue
-            name = _P(member.name).name
+            name = Path(member.name).name
             if name != chunk.value:
                 continue
             fobj = tar.extractfile(member)
@@ -101,9 +102,7 @@ def select_position(feats, mo):
 
 
 @app.cell
-def display_position(chunk, feats, mo, pos, qs):
-    import chess
-
+def display_position(chess, chunk, feats, mo, pos, qs):
     idx = int(pos.value) - 1
     feat = feats[idx]
     q = qs[idx]
