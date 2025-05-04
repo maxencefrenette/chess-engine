@@ -81,6 +81,7 @@ def select_position(mo, features_all, best_q_all, num_positions):
 def display_position(mo, features_all, best_q_all, num_positions, position):
     import chess
 
+    # Determine which position to show
     idx = int(position.value) - 1
     feat = features_all[idx]
     q = best_q_all[idx]
@@ -90,7 +91,7 @@ def display_position(mo, features_all, best_q_all, num_positions, position):
     castling_rights = feat[768:772].tolist()
     en_passant = feat[772:780].tolist() if feat.shape[0] >= 780 else [0] * 8
 
-    # Build chess board
+    # Build the chess board
     board = chess.Board.empty()
     piece_types = [
         chess.PAWN,
@@ -116,12 +117,18 @@ def display_position(mo, features_all, best_q_all, num_positions, position):
     en_files = [chr(97 + i) for i, v in enumerate(en_passant) if v == 1]
     en_str = ", ".join(en_files) if en_files else "None"
 
-    # Display details
-    mo.md(f"**Position {idx+1} of {num_positions}**")
-    mo.md(f"Best Q: Win={q[0]:.4f}, Draw={q[1]:.4f}, Loss={q[2]:.4f}")
-    mo.md(f"Castling rights: {cast_str}")
-    mo.md(f"En passant files: {en_str} (features: {en_passant})")
-    mo.md(f"```{board}```")
+    # Prepare UI elements
+    title = mo.md(f"**Position {idx+1} of {num_positions}**")
+    q_line = mo.md(f"Best Q: Win={q[0]:.4f}, Draw={q[1]:.4f}, Loss={q[2]:.4f}")
+    cast_line = mo.md(f"Castling rights: {cast_str}")
+    ep_line = mo.md(f"En passant files: {en_str} (features: {en_passant})")
+    # Render board as SVG
+    svg = board._repr_svg_()
+    board_svg = mo.as_html(svg)
+
+    # Display all details and the SVG board
+    mo.vstack([title, q_line, cast_line, ep_line, board_svg])
+    return title, q_line, cast_line, ep_line, board_svg
 
 
 if __name__ == "__main__":
