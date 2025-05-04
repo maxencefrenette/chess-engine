@@ -130,9 +130,16 @@ def display_position(chess, chunk, feats, mo, pos, qs):
                     sq = chess.square(c, r)
                     board.set_piece_at(sq, chess.Piece(piece_types[p], colors[p]))
 
-    # Undo LC0 flip of board every turn: mirror board for black-to-move positions
+    # For odd positions (original black to move), mirror board and flip castling rights and Q
     if idx % 2 == 1:
-        board = board.mirror()
+        try:
+            board = board.mirror()
+        except AttributeError:
+            board.mirror()
+        # Swap castling flags: [us_kingside, us_queenside, them_kingside, them_queenside]
+        castling = [castling[2], castling[3], castling[0], castling[1]]
+        # Swap Q values: win <-> loss
+        q = [q[2], q[1], q[0]]
 
     # Format info strings
     castling_chars = [c for flag, c in zip(castling, ["K", "Q", "k", "q"]) if flag]
