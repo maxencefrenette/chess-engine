@@ -1,11 +1,11 @@
 import marimo
 
-__generated_with = "0.13.4"
+__generated_with = "0.11.14"
 app = marimo.App(width="medium")
 
 
 @app.cell
-def load_ui():
+def load_ui(__file__):
     # UI to select file and number of positions
     from pathlib import Path
 
@@ -24,11 +24,11 @@ def load_ui():
     load_button = mo.ui.run_button(label="Load Data")
     mo.vstack([file_path, max_positions, load_button])
     # Return marimo handle for downstream cells
-    return mo, file_path, max_positions, load_button
+    return Path, default_tar, file_path, load_button, max_positions, mo
 
 
 @app.cell
-def parse_data(mo, file_path, max_positions, load_button):
+def parse_data(file_path, max_positions):
     import sys
     import tarfile
     from pathlib import Path as _P
@@ -66,19 +66,37 @@ def parse_data(mo, file_path, max_positions, load_button):
     features_all = np.array(features_list, dtype=np.float32)
     best_q_all = np.array(q_list, dtype=np.float32)
     num_positions = min(int(max_positions.value), len(features_all))
-    return mo, features_all, best_q_all, num_positions
+    return (
+        LeelaChunkParser,
+        best_q_all,
+        feats,
+        features_all,
+        features_list,
+        fobj,
+        m,
+        name,
+        np,
+        num_positions,
+        parser,
+        path,
+        q_list,
+        qs,
+        sys,
+        tar,
+        tarfile,
+    )
 
 
 @app.cell
-def select_position(mo, features_all, best_q_all, num_positions):
+def select_position(mo, num_positions):
     # Position selector UI
     position = mo.ui.number(label="Position", start=1, stop=num_positions, value=1)
     mo.vstack([position])
-    return mo, features_all, best_q_all, num_positions, position
+    return (position,)
 
 
 @app.cell
-def display_position(mo, features_all, best_q_all, num_positions, position):
+def display_position(best_q_all, features_all, mo, num_positions, position):
     import chess
 
     # Determine which position to show
@@ -128,7 +146,32 @@ def display_position(mo, features_all, best_q_all, num_positions, position):
 
     # Display all details and the SVG board
     mo.vstack([title, q_line, cast_line, ep_line, board_svg])
-    return title, q_line, cast_line, ep_line, board_svg
+    return (
+        board,
+        board_planes,
+        board_svg,
+        cast_line,
+        cast_str,
+        castling_chars,
+        castling_rights,
+        chess,
+        colors,
+        en_files,
+        en_passant,
+        en_str,
+        ep_line,
+        f,
+        feat,
+        idx,
+        p,
+        piece_types,
+        q,
+        q_line,
+        r,
+        sq,
+        svg,
+        title,
+    )
 
 
 if __name__ == "__main__":
