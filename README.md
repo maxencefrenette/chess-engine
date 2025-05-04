@@ -4,7 +4,7 @@ This is an unfinished toy chess engine that uses deep learning. I don't have a n
 
 ## Installation
 
-- CPU-only mode: `uv sync --group cpu`
+- CPU-only mode (works inside the codex sandbox): `uv sync --group cpu`
 - GPU mode (installs torch from pypi): `uv sync --group gpu`
 
 ## Project Structure
@@ -32,6 +32,13 @@ This is an unfinished toy chess engine that uses deep learning. I don't have a n
 - Training
   - `uv run train_debug`
   - `uv run train_pico`
+
+# Codex workarounds
+
+Codex's sandbox is a little too tights for some of the tools used in this projects.
+
+- Run codex like this: `codex -w $(uv cache dir) -w $(realpath $TMPDIR)`
+- Run `uv sync --group cpu` to install the dependencies.
 
 ## Acknowledgements
 
