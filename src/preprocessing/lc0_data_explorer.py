@@ -20,13 +20,12 @@ def load_ui():
         value=str(default_tar),
         placeholder="Enter path to .tar file containing LC0 chunks",
     )
-    load_button = mo.ui.run_button(label="Load Data")
-    mo.vstack([file_path, load_button])
-    return file_path, load_button, mo
+    file_path
+    return file_path, mo
 
 
 @app.cell
-def parse_data(file_path, load_button, mo):
+def parse_data(file_path):
     """Parse all games from the .tar archive into lists of features and Qs"""
     import sys
     import tarfile
@@ -35,9 +34,6 @@ def parse_data(file_path, load_button, mo):
     import numpy as np
 
     from src.preprocessing.lc0_to_npz import LeelaChunkParser
-
-    # Wait until Load button is pressed
-    mo.stop(not load_button.value)
 
     # Determine input path (UI or CLI)
     path = file_path.value or (sys.argv[1] if len(sys.argv) > 1 else None)
