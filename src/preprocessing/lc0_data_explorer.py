@@ -1,35 +1,33 @@
 import marimo
 
-__generated_with = "0.11.14"
+__generated_with = "0.13.4"
 app = marimo.App(width="medium")
 
 
 @app.cell
-def load_ui(__file__):
+def load_ui():
+    """UI to select the LC0 .tar archive file"""
     from pathlib import Path
 
     import marimo as mo
 
     # Default sample tar in tests/test_data
     default_tar = (
-        Path(__file__).parent.parent.parent
-        / "tests"
-        / "test_data"
-        / "lc0-data-sample.tar"
+        Path(__file__).parents[2] / "tests" / "test_data" / "lc0-data-sample.tar"
     )
     file_path = mo.ui.text(
         label="LC0 tar archive",
         value=str(default_tar),
         placeholder="Enter path to .tar file containing LC0 chunks",
     )
-    max_positions = mo.ui.number(label="Max positions per game", value=10)
     load_button = mo.ui.run_button(label="Load Data")
-    mo.vstack([file_path, max_positions, load_button])
-    return Path, default_tar, file_path, load_button, max_positions, mo
+    mo.vstack([file_path, load_button])
+    return file_path, load_button, mo
 
 
 @app.cell
-def parse_data(file_path, max_positions):
+def parse_data(file_path, load_button, mo):
+    """Parse all games from the .tar archive into lists of features and Qs"""
     import sys
     import tarfile
     from pathlib import Path as _P
@@ -37,6 +35,9 @@ def parse_data(file_path, max_positions):
     import numpy as np
 
     from src.preprocessing.lc0_to_npz import LeelaChunkParser
+
+    # Wait until Load button is pressed
+    mo.stop(not load_button.value)
 
     # Determine input path (UI or CLI)
     path = file_path.value or (sys.argv[1] if len(sys.argv) > 1 else None)
@@ -46,52 +47,32 @@ def parse_data(file_path, max_positions):
     game_names = []
     features_by_game = []
     best_q_by_game = []
-    limit = int(max_positions.value)
 
     with tarfile.open(path) as tar:
-        for m in tar.getmembers():
-            if not m.isfile():
+        for member in tar.getmembers():
+            if not member.isfile():
                 continue
-            name = _P(m.name).name
-            # Only consider real chunk files
+            name = _P(member.name).name
+            # Only consider gz chunk files
             if not name.endswith(".gz") or name.startswith("._"):
                 continue
-            fobj = tar.extractfile(m)
+            fobj = tar.extractfile(member)
             parser = LeelaChunkParser(fobj)
-            feats_chunk, q_chunk = parser.parse_game()
-            # Limit positions per game
-            if limit < len(feats_chunk):
-                feats_chunk = feats_chunk[:limit]
-                q_chunk = q_chunk[:limit]
+            feats, qs = parser.parse_game()
             game_names.append(name)
-            features_by_game.append(feats_chunk)
-            best_q_by_game.append(q_chunk)
-    return (
-        LeelaChunkParser,
-        best_q_by_game,
-        feats_chunk,
-        features_by_game,
-        fobj,
-        game_names,
-        limit,
-        m,
-        name,
-        np,
-        parser,
-        path,
-        q_chunk,
-        sys,
-        tar,
-        tarfile,
-    )
+            features_by_game.append(feats)
+            best_q_by_game.append(qs)
+
+    return best_q_by_game, feats, features_by_game, game_names, qs
 
 
 @app.cell
 def select_position(game_names, mo):
-    # Game selector UI
-    # Dropdown with default to first game
+    """Select which game to explore"""
     game = mo.ui.dropdown(
-        label="Game", options=game_names, value=game_names[0] if game_names else None
+        label="Game",
+        options=game_names,
+        value=game_names[0] if game_names else None,
     )
     mo.vstack([game])
     return (game,)
@@ -99,15 +80,13 @@ def select_position(game_names, mo):
 
 @app.cell
 def _(best_q_by_game, features_by_game, game, game_names, mo):
-    # Determine selected game index
-    # Determine selected game index
+    """Select which position within the chosen game"""
     idx_game = game_names.index(game.value)
-    feats = features_by_game[idx_game]
-    qs = best_q_by_game[idx_game]
-    # Position selector within the chosen game
-    pos = mo.ui.number(label="Position", start=1, stop=len(feats), value=1)
+    game_feats = features_by_game[idx_game]
+    game_qs = best_q_by_game[idx_game]
+    pos = mo.ui.number(label="Position", start=1, stop=len(game_feats), value=1)
     mo.vstack([pos])
-    return feats, idx_game, pos, qs
+    return (pos,)
 
 
 @app.cell
@@ -142,48 +121,21 @@ def display_position(feats, game, mo, pos, qs):
                     board.set_piece_at(sq, chess.Piece(piece_types[p], colors[p]))
 
     # Format info strings
-    cast_chars = [c for flag, c in zip(castling, ["K", "Q", "k", "q"]) if flag]
-    cast_str = "".join(cast_chars) if cast_chars else "-"
+    castling_chars = [c for flag, c in zip(castling, ["K", "Q", "k", "q"]) if flag]
+    cast_str = "".join(castling_chars) if castling_chars else "-"
     en_files = [chr(97 + i) for i, v in enumerate(en_passant) if v == 1]
     en_str = ", ".join(en_files) if en_files else "None"
 
-    # Display metadata
+    # Display metadata and board
     title = mo.md(f"**Game: {game.value}, Position {idx+1} of {len(feats)}**")
     q_line = mo.md(f"Best Q: Win={q[0]:.4f}, Draw={q[1]:.4f}, Loss={q[2]:.4f}")
     cast_line = mo.md(f"Castling rights: {cast_str}")
     ep_line = mo.md(f"En passant files: {en_str} (features: {en_passant})")
-    # SVG board
     svg = board._repr_svg_()
     board_svg = mo.as_html(svg)
 
-    # Render all
     mo.vstack([title, q_line, cast_line, ep_line, board_svg])
-    return (
-        board,
-        board_planes,
-        board_svg,
-        c,
-        cast_chars,
-        cast_line,
-        cast_str,
-        castling,
-        chess,
-        colors,
-        en_files,
-        en_passant,
-        en_str,
-        ep_line,
-        feat,
-        idx,
-        p,
-        piece_types,
-        q,
-        q_line,
-        r,
-        sq,
-        svg,
-        title,
-    )
+    return
 
 
 if __name__ == "__main__":
