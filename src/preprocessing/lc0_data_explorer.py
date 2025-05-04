@@ -16,9 +16,9 @@ def load_ui():
         Path(__file__).parents[2] / "tests" / "test_data" / "lc0-data-sample.tar"
     )
     file_path = mo.ui.text(
-        label="LC0 data file",
+        label="LC0 tar archive",
         value=str(default_tar),
-        placeholder="Enter path to .tar or .gz file",
+        placeholder="Enter path to .tar file containing LC0 chunks",
     )
     max_positions = mo.ui.number(label="Max positions", value=10)
     load_button = mo.ui.run_button(label="Load Data")
@@ -40,32 +40,27 @@ def parse_data(mo, file_path, max_positions, load_button):
     # Determine data source: UI or CLI argument
     path = file_path.value or (sys.argv[1] if len(sys.argv) > 1 else None)
     if not path:
-        raise ValueError("Provide a .tar or .gz LC0 data file via UI or CLI")
+        raise ValueError("Provide a .tar LC0 data file via UI or CLI")
 
     features_list = []
     q_list = []
 
-    # Handle .tar archives containing multiple .gz chunks
-    if tarfile.is_tarfile(path):
-        with tarfile.open(path) as tar:
-            for m in tar.getmembers():
-                if not m.isfile():
-                    continue
-                name = _P(m.name).name
-                # Skip resource forks or non-chunk files
-                if not name.endswith(".gz") or name.startswith("._"):
-                    continue
-                fobj = tar.extractfile(m)
-                parser = LeelaChunkParser(fobj)
-                feats, qs = parser.parse_game()
-                features_list.extend(feats.tolist())
-                q_list.extend(qs.tolist())
-    else:
-        # Single gzip chunk
-        parser = LeelaChunkParser(open(path, "rb"))
-        feats, qs = parser.parse_game()
-        features_list = feats.tolist()
-        q_list = qs.tolist()
+    # Only .tar archives supported: extract contained .gz chunks
+    if not tarfile.is_tarfile(path):
+        raise ValueError("Only .tar LC0 data files are supported")
+    with tarfile.open(path) as tar:
+        for m in tar.getmembers():
+            if not m.isfile():
+                continue
+            name = _P(m.name).name
+            # Skip non-chunk or hidden files
+            if not name.endswith(".gz") or name.startswith("._"):
+                continue
+            fobj = tar.extractfile(m)
+            parser = LeelaChunkParser(fobj)
+            feats, qs = parser.parse_game()
+            features_list.extend(feats.tolist())
+            q_list.extend(qs.tolist())
 
     # Convert lists to arrays
     features_all = np.array(features_list, dtype=np.float32)
