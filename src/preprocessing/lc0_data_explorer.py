@@ -25,68 +25,83 @@ def load_ui():
 
 
 @app.cell
-def parse_data(file_path):
-    """Parse all games from the .tar archive into lists of features and Qs"""
+def list_chunks(file_path):
+    """List LC0 chunk (.gz) files in the .tar archive"""
     import sys
     import tarfile
     from pathlib import Path as _P
-
-    import numpy as np
-
-    from src.preprocessing.lc0_to_npz import LeelaChunkParser
 
     # Determine input path (UI or CLI)
     path = file_path.value or (sys.argv[1] if len(sys.argv) > 1 else None)
     if not path or not tarfile.is_tarfile(path):
         raise ValueError("Provide a valid .tar LC0 data file via UI or CLI")
 
-    game_names = []
-    features_by_game = []
-    best_q_by_game = []
+    def get_chunk_names(path):
+        """Get the names of all gz chunk files in the tar archive"""
+        chunk_names = []
+        with tarfile.open(path) as tar:
+            for member in tar.getmembers():
+                if not member.isfile():
+                    continue
+                name = _P(member.name).name
+                # Only consider gz chunk files
+                if not name.endswith(".gz") or name.startswith("._"):
+                    continue
+                chunk_names.append(name)
+        return chunk_names
+
+    chunk_names = get_chunk_names(path)
+    return chunk_names, path, tarfile
+
+
+@app.cell
+def select_chunk(chunk_names, mo):
+    """Select which chunk file to parse"""
+    chunk = mo.ui.dropdown(
+        label="Chunk file",
+        options=chunk_names,
+        value=chunk_names[0] if chunk_names else None,
+    )
+    mo.vstack([chunk])
+    return (chunk,)
+
+
+@app.cell
+def parse_chunk(chunk, path, tarfile):
+    """Parse the selected chunk file into features and Qs"""
+    from pathlib import Path as _P
+
+    import numpy as np
+
+    from src.preprocessing.lc0_to_npz import LeelaChunkParser
 
     with tarfile.open(path) as tar:
         for member in tar.getmembers():
             if not member.isfile():
                 continue
             name = _P(member.name).name
-            # Only consider gz chunk files
-            if not name.endswith(".gz") or name.startswith("._"):
+            if name != chunk.value:
                 continue
             fobj = tar.extractfile(member)
             parser = LeelaChunkParser(fobj)
             feats, qs = parser.parse_game()
-            game_names.append(name)
-            features_by_game.append(feats)
-            best_q_by_game.append(qs)
+            break
+        else:
+            raise ValueError(f"Selected chunk {chunk.value} not found in archive")
 
-    return best_q_by_game, feats, features_by_game, game_names, qs
-
-
-@app.cell
-def select_position(game_names, mo):
-    """Select which game to explore"""
-    game = mo.ui.dropdown(
-        label="Game",
-        options=game_names,
-        value=game_names[0] if game_names else None,
-    )
-    mo.vstack([game])
-    return (game,)
+    return feats, qs
 
 
 @app.cell
-def _(best_q_by_game, features_by_game, game, game_names, mo):
-    """Select which position within the chosen game"""
-    idx_game = game_names.index(game.value)
-    game_feats = features_by_game[idx_game]
-    game_qs = best_q_by_game[idx_game]
-    pos = mo.ui.number(label="Position", start=1, stop=len(game_feats), value=1)
+def select_position(feats, mo):
+    """Select which position within the chosen chunk"""
+    pos = mo.ui.number(label="Position", start=1, stop=len(feats), value=1)
     mo.vstack([pos])
     return (pos,)
 
 
 @app.cell
-def display_position(feats, game, mo, pos, qs):
+def display_position(chunk, feats, mo, pos, qs):
     import chess
 
     idx = int(pos.value) - 1
@@ -123,7 +138,7 @@ def display_position(feats, game, mo, pos, qs):
     en_str = ", ".join(en_files) if en_files else "None"
 
     # Display metadata and board
-    title = mo.md(f"**Game: {game.value}, Position {idx+1} of {len(feats)}**")
+    title = mo.md(f"**Chunk: {chunk.value}, Position {idx+1} of {len(feats)}**")
     q_line = mo.md(f"Best Q: Win={q[0]:.4f}, Draw={q[1]:.4f}, Loss={q[2]:.4f}")
     cast_line = mo.md(f"Castling rights: {cast_str}")
     ep_line = mo.md(f"En passant files: {en_str} (features: {en_passant})")
