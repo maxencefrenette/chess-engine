@@ -33,6 +33,7 @@ If something is unclear or missing, please ask the user to clarify it. Then, mod
 - This codebase uses marimo notebooks instead of jupyter notebooks.
 - If asked to create a notebook, look at the existing notebooks by searching the codebase for `@app.cell`
 - For more examples and documentation, see `.venv/lib/python3.12/site-packages/marimo/_tutorials`
+- You may test a notebook by running `uv run path/to/notebook.py`
 
 ## Documentation
 
