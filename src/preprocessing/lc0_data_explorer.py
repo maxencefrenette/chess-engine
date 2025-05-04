@@ -130,6 +130,10 @@ def display_position(chess, chunk, feats, mo, pos, qs):
                     sq = chess.square(c, r)
                     board.set_piece_at(sq, chess.Piece(piece_types[p], colors[p]))
 
+    # Undo LC0 flip of board every turn: mirror board for black-to-move positions
+    if idx % 2 == 1:
+        board = board.mirror()
+
     # Format info strings
     castling_chars = [c for flag, c in zip(castling, ["K", "Q", "k", "q"]) if flag]
     cast_str = "".join(castling_chars) if castling_chars else "-"
